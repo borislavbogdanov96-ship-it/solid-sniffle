@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🌊 Bobby & Nikol — Wedding Timeline</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Inter, system-ui, -apple-system, sans-serif; background: #F8F9FC; }
+
+    /* Gantt */
+    .gantt-bar {
+      position: absolute; height: 22px; border-radius: 5px;
+      top: 50%; transform: translateY(-50%);
+      cursor: pointer; transition: filter 0.15s;
+      overflow: hidden;
+    }
+    .gantt-bar:hover { filter: brightness(1.1); }
+    .gantt-bar.blocked {
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 4px,
+        rgba(0,0,0,0.15) 4px, rgba(0,0,0,0.15) 8px
+      );
+    }
+    .gantt-bar.done {
+      opacity: 0.45;
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 5px,
+        rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 9px
+      );
+    }
+    .gantt-bar.active {
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 12px rgba(99,102,241,0.5);
+    }
+
+    /* List task stripe for blocked */
+    .task-stripe {
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 8px,
+        rgba(0,0,0,0.025) 8px, rgba(0,0,0,0.025) 16px
+      );
+    }
+
+    /* Today line */
+    .today-line {
+      position: absolute; top: 0; bottom: 0; width: 2px;
+      background: #ef4444; z-index: 4; pointer-events: none;
+    }
+    .today-label {
+      position: absolute; top: 0; left: 3px;
+      font-size: 9px; color: #ef4444; font-weight: 700;
+      white-space: nowrap; pointer-events: none;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      background: linear-gradient(to right, #6366F1, #D4AF37);
+      height: 6px; border-radius: 3px; transition: width 0.6s ease;
+    }
+
+    /* Status badge */
+    .badge {
+      display: inline-flex; align-items: center; gap: 2px;
+      padding: 2px 8px; border-radius: 9999px;
+      font-size: 11px; font-weight: 600; line-height: 1.5;
+      white-space: nowrap;
+    }
+
+    /* Category dot */
+    .cat-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      display: inline-block; flex-shrink: 0;
+    }
+
+    /* Modal */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      z-index: 50; display: flex; align-items: center;
+      justify-content: center; padding: 16px;
+    }
+
+    /* Custom checkbox */
+    .task-check {
+      width: 20px; height: 20px; border-radius: 5px;
+      border: 2px solid #cbd5e1; cursor: pointer;
+      flex-shrink: 0; display: flex; align-items: center;
+      justify-content: center; transition: all 0.15s;
+      background: white;
+    }
+    .task-check.checked { background: #10b981; border-color: #10b981; }
+
+    /* Task row hover */
+    .task-row { transition: background 0.1s; }
+    .task-row:hover { background: rgba(0,0,0,0.015); }
+
+    /* Filter pill */
+    .pill {
+      padding: 5px 13px; border-radius: 9999px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      border: 1.5px solid #e2e8f0; background: white;
+      color: #64748b; transition: all 0.15s; white-space: nowrap;
+      user-select: none;
+    }
+    .pill:hover { border-color: #cbd5e1; color: #334155; }
+    .pill.active { color: white !important; border-color: transparent !important; }
+
+    /* Gantt tooltip */
+    .g-tooltip {
+      position: fixed; z-index: 200; pointer-events: none;
+      max-width: 280px; min-width: 180px;
+      background: #1e293b; color: #f1f5f9;
+      border-radius: 12px; padding: 12px 14px;
+      font-size: 12px; line-height: 1.5;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    /* Do Next row */
+    .do-next-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 14px; border-radius: 10px;
+      background: white; border: 1px solid #e2e8f0;
+      transition: border-color 0.15s;
+    }
+    .do-next-row:hover { border-color: #a5b4fc; }
+
+    .gantt-month-col {
+      position: absolute; top: 0; bottom: 0;
+      border-right: 1px solid #f1f5f9;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+
+  <!-- Loading -->
+  <div id="loading" class="flex flex-col items-center justify-center min-h-screen gap-3">
+    <div class="text-5xl">🌊</div>
+    <p class="text-slate-500 text-sm">Connecting to Firebase…</p>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="hidden">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-800 leading-tight">🌊 Bobby &amp; Nikol — Wedding Timeline</h1>
+          <p class="text-xs text-slate-500" id="subtitle">Fri 11 Jun 2027 · "Flowing Together" · … days</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span id="sync-badge" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 transition-all">● Syncing</span>
+          <div class="flex bg-slate-100 rounded-xl p-0.5 gap-0.5">
+            <button id="btn-list" onclick="setView('list')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">☰ List</button>
+            <button id="btn-gantt" onclick="setView('gantt')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">▤ Timeline</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-5 space-y-4">
+
+      <!-- Stats -->
+      <div id="stats"></div>
+
+      <!-- Do Next -->
+      <div id="do-next"></div>
+
+      <!-- Filters row -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <div id="filter-pills" class="flex gap-1.5 flex-wrap"></div>
+        <button id="ready-btn" onclick="toggleReadyOnly()" class="pill ml-auto">⚡ Ready only</button>
+        <button onclick="openAdd()" class="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-xs font-bold rounded-full hover:bg-indigo-700 transition-colors shadow-sm">+ Add</button>
+      </div>
+
+      <!-- Views -->
+      <div id="list-view"></div>
+      <div id="gantt-view" class="hidden"></div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer class="max-w-6xl mx-auto px-4 py-6 mt-2 border-t border-slate-200 flex justify-between items-center">
+      <p class="text-xs text-slate-400">🌊 Bobby &amp; Nikol · "Flowing Together" · Since Niagara Falls, 2017</p>
+      <button onclick="openReset()" class="text-xs text-slate-400 hover:text-red-500 transition-colors">↺ Reset to defaults</button>
+    </footer>
+
+  </div>
+
+  <!-- Add Modal -->
+  <div id="add-modal" class="modal-backdrop hidden" onclick="maybeClose('add-modal', event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-800">Add Task</h2>
+          <button onclick="closeModal('add-modal')" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div id="add-form-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Modal -->
+  <div id="edit-modal" class="modal-backdrop hidden" onclick="maybeClose('edit-modal', event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[92vh] overflow-y-auto" onclick="event.stopPropagation()">
+      <div class="p-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-800">Edit Task</h2>
+          <button onclick="closeModal('edit-modal')" class="text-slate-400 hover:text-slate-600 text-xl leading-none">✕</button>
+        </div>
+        <div id="edit-form-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reset Modal -->
+  <div id="reset-modal" class="modal-backdrop hidden" onclick="maybeClose('reset-modal', event)">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onclick="event.stopPropagation()">
+      <h2 class="text-base font-bold text-slate-800 mb-2">Reset all tasks?</h2>
+      <p class="text-sm text-slate-500 mb-6">This will restore all 50 default tasks and discard any custom changes. Cannot be undone.</p>
+      <div class="flex gap-2">
+        <button onclick="closeModal('reset-modal')" class="flex-1 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+        <button onclick="doReset()" class="flex-1 py-2 text-sm font-semibold text-white bg-red-500 rounded-xl hover:bg-red-600 transition-colors">↺ Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gantt Tooltip -->
+  <div id="g-tip" class="g-tooltip hidden"></div>
+
+<script>
+// ─────────────────────────────────────────────────────────────
+// FIREBASE
+// ─────────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey: "AIzaSyDuKiMP66DZOJZEOVUEHQsuesGwC7gwp9Y",
+  authDomain: "bobby-nikol-wedding.firebaseapp.com",
+  databaseURL: "https://bobby-nikol-wedding-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "bobby-nikol-wedding",
+  storageBucket: "bobby-nikol-wedding.firebasestorage.app",
+  messagingSenderId: "1045458509622",
+  appId: "1:1045458509622:web:febb6eec887acb95991d97"
+});
+const db = firebase.database();
+const tasksRef = db.ref('tasks');
+
+// ─────────────────────────────────────────────────────────────
+// CONSTANTS
+// ─────────────────────────────────────────────────────────────
+const WEDDING = new Date('2027-06-11T00:00:00');
+const TL_START = new Date('2026-06-01T00:00:00');
+const TL_END   = new Date('2027-06-30T00:00:00');
+const TL_MS    = TL_END - TL_START;
+
+const CATS = [
+  'Foundation', 'Venue & Catering', 'Vendors',
+  'Style & Design', 'Attire & Beauty', 'Logistics',
+  'Stationery', 'Final Prep'
+];
+const CAT_COLOR = {
+  'Foundation':       '#6366F1',
+  'Venue & Catering': '#D4AF37',
+  'Vendors':          '#059669',
+  'Style & Design':   '#DB2777',
+  'Attire & Beauty':  '#EA580C',
+  'Logistics':        '#2563EB',
+  'Stationery':       '#7C3AED',
+  'Final Prep':       '#DC2626',
+};
+
+// ─────────────────────────────────────────────────────────────
+// DEFAULT TASKS
+// ─────────────────────────────────────────────────────────────
+const DEFAULTS = [
+  {id:1,  name:"Set budget",                  cat:"Foundation",       s:"2026-06-01",e:"2026-06-15",done:true, deps:[],         notes:"25,000 EUR confirmed"},
+  {id:2,  name:"Finalize guest list",          cat:"Foundation",       s:"2026-06-01",e:"2026-07-15",done:false,deps:[],         notes:"~51 guests"},
+  {id:3,  name:"Define concept & style",       cat:"Foundation",       s:"2026-06-01",e:"2026-06-30",done:true, deps:[],         notes:'"Flowing Together". Niagara thread.'},
+  {id:4,  name:"Research venues",              cat:"Foundation",       s:"2026-06-01",e:"2026-07-31",done:false,deps:[1],        notes:"28 venues researched"},
+  {id:5,  name:"Visit venues",                 cat:"Venue & Catering", s:"2026-07-01",e:"2026-09-30",done:false,deps:[4,2],      notes:"Top 3-5"},
+  {id:6,  name:"Book venue ⚠️",                cat:"Venue & Catering", s:"2026-08-01",e:"2026-10-31",done:false,deps:[5],        notes:"CRITICAL — unlocks everything"},
+  {id:7,  name:"Book caterer",                 cat:"Venue & Catering", s:"2026-09-01",e:"2026-12-31",done:false,deps:[6],        notes:"If external catering needed"},
+  {id:8,  name:"Menu tasting",                 cat:"Venue & Catering", s:"2027-02-01",e:"2027-03-31",done:false,deps:[7],        notes:""},
+  {id:9,  name:"Finalize menu",                cat:"Venue & Catering", s:"2027-04-01",e:"2027-04-30",done:false,deps:[8,43],     notes:"After RSVP count"},
+  {id:10, name:"Design Niagara cocktails",     cat:"Venue & Catering", s:"2027-03-01",e:"2027-04-30",done:false,deps:[7],        notes:"5 signature cocktails"},
+  {id:11, name:"Book photographer",            cat:"Vendors",          s:"2026-08-01",e:"2026-12-31",done:false,deps:[1,6],      notes:"~1,500€"},
+  {id:12, name:"Book videographer",            cat:"Vendors",          s:"2026-08-01",e:"2026-12-31",done:false,deps:[1,6],      notes:"~1,000€"},
+  {id:13, name:"Book DJ",                      cat:"Vendors",          s:"2026-10-01",e:"2027-01-31",done:false,deps:[6],        notes:"~800€, 3-act music plan"},
+  {id:14, name:"Book florist",                 cat:"Vendors",          s:"2026-11-01",e:"2027-02-28",done:false,deps:[6,3],      notes:"~700€"},
+  {id:15, name:"Book decorator",               cat:"Vendors",          s:"2026-11-01",e:"2027-02-28",done:false,deps:[6,3],      notes:"~1,000€"},
+  {id:16, name:"Evaluate coordinator",         cat:"Vendors",          s:"2026-07-01",e:"2026-09-30",done:false,deps:[1],        notes:"OH,PARTY! ~1,000-1,500€"},
+  {id:17, name:"Book officiant",               cat:"Vendors",          s:"2027-01-01",e:"2027-03-31",done:false,deps:[6],        notes:"Water-pouring ritual"},
+  {id:18, name:"Create mood board",            cat:"Style & Design",   s:"2026-06-15",e:"2026-08-31",done:false,deps:[3],        notes:"Pinterest"},
+  {id:19, name:"Design table names",           cat:"Style & Design",   s:"2027-01-01",e:"2027-03-31",done:false,deps:[6,18],     notes:"Niagara landmarks"},
+  {id:20, name:"Source water vessels",         cat:"Style & Design",   s:"2027-02-01",e:"2027-04-30",done:false,deps:[17],       notes:"For ceremony ritual"},
+  {id:21, name:"10-year photo timeline",       cat:"Style & Design",   s:"2027-03-01",e:"2027-05-31",done:false,deps:[18],       notes:"10 photos 2017-2027"},
+  {id:22, name:"Design welcome sign",          cat:"Style & Design",   s:"2027-03-01",e:"2027-05-15",done:false,deps:[18],       notes:'"Met by falling water…"'},
+  {id:23, name:"Nikol — dress search",         cat:"Attire & Beauty",  s:"2026-08-01",e:"2026-12-31",done:false,deps:[1,3],      notes:"6-9 month lead"},
+  {id:24, name:"Nikol — order dress ⚠️",       cat:"Attire & Beauty",  s:"2026-12-01",e:"2027-01-31",done:false,deps:[23],       notes:"By Jan 2027 latest"},
+  {id:25, name:"Nikol — dress fittings",       cat:"Attire & Beauty",  s:"2027-02-01",e:"2027-05-31",done:false,deps:[24],       notes:"2-3 fittings"},
+  {id:26, name:"Bobby — order suit",           cat:"Attire & Beauty",  s:"2027-01-01",e:"2027-03-31",done:false,deps:[3],        notes:"~400€"},
+  {id:27, name:"Bobby — suit fitting",         cat:"Attire & Beauty",  s:"2027-04-01",e:"2027-05-15",done:false,deps:[26],       notes:""},
+  {id:28, name:"Book hair & makeup artist",    cat:"Attire & Beauty",  s:"2026-12-01",e:"2027-02-28",done:false,deps:[1],        notes:"~300-500€"},
+  {id:29, name:"Hair & makeup trial",          cat:"Attire & Beauty",  s:"2027-04-01",e:"2027-05-15",done:false,deps:[28,24],    notes:"Needs dress neckline"},
+  {id:30, name:"Choose accessories (Nikol)",   cat:"Attire & Beauty",  s:"2027-02-01",e:"2027-04-30",done:false,deps:[24],       notes:"~200€"},
+  {id:31, name:"Order wedding rings ⚠️",       cat:"Logistics",        s:"2027-01-01",e:"2027-02-28",done:false,deps:[1],        notes:"2 months for custom"},
+  {id:32, name:"Pick up rings",                cat:"Logistics",        s:"2027-04-01",e:"2027-05-15",done:false,deps:[31],       notes:"Verify engraving"},
+  {id:33, name:"Book wedding night room",      cat:"Logistics",        s:"2027-01-01",e:"2027-03-31",done:false,deps:[6],        notes:"Depends on venue"},
+  {id:34, name:"Book guest accommodation",     cat:"Logistics",        s:"2027-01-01",e:"2027-03-31",done:false,deps:[6,2],      notes:"Block rooms"},
+  {id:35, name:"Book wedding car",             cat:"Logistics",        s:"2027-02-01",e:"2027-04-30",done:false,deps:[6],        notes:"~300-500€"},
+  {id:36, name:"Write vows & plan ceremony",   cat:"Logistics",        s:"2027-03-01",e:"2027-05-31",done:false,deps:[17],       notes:"Water ritual. Rehearse."},
+  {id:37, name:"Create day-of run sheet",      cat:"Logistics",        s:"2027-05-01",e:"2027-06-01",done:false,deps:[36,9,13],  notes:"Full schedule for all vendors"},
+  {id:38, name:"Prepare guest favours",        cat:"Logistics",        s:"2027-04-01",e:"2027-05-31",done:false,deps:[43],       notes:"Butterfly pea tea sachets"},
+  {id:39, name:"Create seating plan",          cat:"Logistics",        s:"2027-05-15",e:"2027-06-05",done:false,deps:[43,19],    notes:"After RSVPs + table names"},
+  {id:40, name:"Design & send Save the Dates", cat:"Stationery",       s:"2026-08-01",e:"2026-09-30",done:false,deps:[6,2],      notes:"Need venue + guest list!"},
+  {id:41, name:"Design formal invitations",    cat:"Stationery",       s:"2027-01-01",e:"2027-02-28",done:false,deps:[40,18],    notes:"Match mood board"},
+  {id:42, name:"Send formal invitations",      cat:"Stationery",       s:"2027-03-01",e:"2027-03-15",done:false,deps:[41],       notes:"12 weeks before"},
+  {id:43, name:"RSVP deadline",                cat:"Stationery",       s:"2027-05-01",e:"2027-05-14",done:false,deps:[42],       notes:"Chase by May 7"},
+  {id:44, name:"Print menus, cards, signage",  cat:"Stationery",       s:"2027-05-01",e:"2027-05-31",done:false,deps:[9,39],     notes:""},
+  {id:45, name:"Confirm all vendors",          cat:"Final Prep",       s:"2027-05-15",e:"2027-05-31",done:false,deps:[11,12,13,14,15,17],notes:"Call each one"},
+  {id:46, name:"Final dress fitting",          cat:"Final Prep",       s:"2027-05-25",e:"2027-06-01",done:false,deps:[25],       notes:"2 weeks before"},
+  {id:47, name:"Vendor payments",              cat:"Final Prep",       s:"2027-06-01",e:"2027-06-08",done:false,deps:[45],       notes:"Final balances"},
+  {id:48, name:"Wedding rehearsal",            cat:"Final Prep",       s:"2027-06-09",e:"2027-06-09",done:false,deps:[36,37],    notes:"Water ritual practice"},
+  {id:49, name:"Prepare emergency kit",        cat:"Final Prep",       s:"2027-06-01",e:"2027-06-08",done:false,deps:[],         notes:"Sewing kit, painkillers, charger"},
+  {id:50, name:"🎉 WEDDING DAY",               cat:"Final Prep",       s:"2027-06-11",e:"2027-06-11",done:false,deps:[45,46,47,48,32,44],notes:"Bobby & Nikol — Flowing Together. 10 years."},
+];
+
+// ─────────────────────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────────────────────
+let tasks = {};   // string(id) → task
+let curView = 'list';
+let curFilter = 'all';
+let readyOnly = false;
+let editId = null;
+
+// ─────────────────────────────────────────────────────────────
+// HELPERS
+// ─────────────────────────────────────────────────────────────
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(ds) {
+  if (!ds) return '';
+  const d = new Date(ds + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'2-digit'});
+}
+
+function today0() {
+  const d = new Date(); d.setHours(0,0,0,0); return d;
+}
+
+function normDeps(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) return raw.map(Number).filter(Boolean);
+  return Object.values(raw).map(Number).filter(Boolean);
+}
+
+function getT(id) { return tasks[String(id)]; }
+
+// ─────────────────────────────────────────────────────────────
+// STATUS LOGIC
+// ─────────────────────────────────────────────────────────────
+function status(t) {
+  if (t.done) return 'done';
+  const tod = today0();
+  const end = new Date(t.e + 'T00:00:00');
+  const start = new Date(t.s + 'T00:00:00');
+  const deps = normDeps(t.deps);
+  if (deps.length > 0 && deps.some(d => { const dt = getT(d); return !dt || !dt.done; }))
+    return 'blocked';
+  if (end < tod) return 'overdue';
+  if (start <= tod) return 'active';
+  return 'upcoming';
+}
+
+function blockingDeps(t) {
+  return normDeps(t.deps).filter(d => { const dt = getT(d); return !dt || !dt.done; });
+}
+
+function unlocks(id) {
+  const n = Number(id);
+  return Object.values(tasks).filter(t => normDeps(t.deps).includes(n));
+}
+
+// ─────────────────────────────────────────────────────────────
+// SYNC STATUS
+// ─────────────────────────────────────────────────────────────
+function setSyncBadge(s) {
+  const el = document.getElementById('sync-badge');
+  if (s === 'saving') { el.textContent = '● Saving…'; el.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-100 text-amber-700 transition-all'; }
+  else if (s === 'synced') { el.textContent = '✓ Synced'; el.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 transition-all'; }
+  else { el.textContent = '✗ Offline'; el.className = 'text-xs font-semibold px-2.5 py-1 rounded-full bg-red-100 text-red-600 transition-all'; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: SUBTITLE
+// ─────────────────────────────────────────────────────────────
+function renderSubtitle() {
+  const d = Math.ceil((WEDDING - today0()) / 86400000);
+  document.getElementById('subtitle').textContent =
+    `Fri 11 Jun 2027 · "Flowing Together" · ${d} days`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: STATS BAR
+// ─────────────────────────────────────────────────────────────
+function renderStats() {
+  const all = Object.values(tasks);
+  const total = all.length;
+  if (!total) { document.getElementById('stats').innerHTML = ''; return; }
+  const done   = all.filter(t => t.done).length;
+  const blocked= all.filter(t => status(t) === 'blocked').length;
+  const overdue= all.filter(t => status(t) === 'overdue').length;
+  const ready  = all.filter(t => !t.done && status(t) !== 'blocked').length;
+  const pct    = Math.round(done / total * 100);
+  const days   = Math.ceil((WEDDING - today0()) / 86400000);
+
+  document.getElementById('stats').innerHTML = `
+    <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2">
+      <div class="bg-white border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-2xl font-bold text-emerald-600">${pct}%</div>
+        <div class="text-xs text-slate-500 mt-0.5">Done <span class="text-slate-400">${done}/${total}</span></div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-2xl font-bold text-indigo-600">${ready}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Ready</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-2xl font-bold ${blocked > 0 ? 'text-amber-500' : 'text-slate-300'}">${blocked}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Blocked</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 text-center">
+        <div class="text-2xl font-bold ${overdue > 0 ? 'text-red-500' : 'text-slate-300'}">${overdue}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Overdue</div>
+      </div>
+      <div class="bg-white border border-slate-200 rounded-xl p-3 text-center col-span-2 sm:col-span-1">
+        <div class="text-2xl font-bold text-slate-700">${days}</div>
+        <div class="text-xs text-slate-500 mt-0.5">Days left</div>
+      </div>
+    </div>
+    <div class="bg-slate-100 rounded-full h-1.5 overflow-hidden">
+      <div class="progress-bar" style="width:${pct}%"></div>
+    </div>
+  `;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: DO NEXT PANEL
+// ─────────────────────────────────────────────────────────────
+function renderDoNext() {
+  const tod = today0();
+  const all = Object.values(tasks);
+
+  const ready = all
+    .filter(t => !t.done && status(t) !== 'blocked' && new Date(t.s + 'T00:00:00') <= tod)
+    .sort((a, b) => new Date(a.e) - new Date(b.e))
+    .slice(0, 5);
+
+  const almost = all
+    .filter(t => !t.done && status(t) === 'blocked' && blockingDeps(t).length === 1)
+    .slice(0, 3);
+
+  const el = document.getElementById('do-next');
+  if (!ready.length && !almost.length) { el.innerHTML = ''; return; }
+
+  let h = `<div class="bg-white border border-indigo-200 rounded-xl overflow-hidden shadow-sm">
+    <div class="px-4 py-2.5 bg-gradient-to-r from-indigo-50 to-white border-b border-indigo-100 flex items-center gap-2">
+      <span class="text-sm font-bold text-indigo-800">⚡ Do Next</span>
+      <span class="text-xs text-indigo-400 ml-auto">${ready.length} ready${almost.length ? ' · ' + almost.length + ' almost' : ''}</span>
+    </div>
+    <div class="p-3 space-y-2">`;
+
+  ready.forEach(t => {
+    const col = CAT_COLOR[t.cat] || '#6366F1';
+    const ov = status(t) === 'overdue';
+    h += `<div class="do-next-row cursor-pointer" onclick="openEdit(${t.id})">
+      <span class="cat-dot mt-0.5 flex-shrink-0" style="background:${col}"></span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-800 truncate">${esc(t.name)}</p>
+        <p class="text-xs text-slate-400">by ${fmtDate(t.e)}${ov ? ' · <span class="text-red-500 font-bold">OVERDUE</span>' : ''}</p>
+      </div>
+      <button onclick="event.stopPropagation(); toggleDone(${t.id})"
+        class="flex-shrink-0 text-xs bg-emerald-100 text-emerald-700 font-bold px-2.5 py-1 rounded-lg hover:bg-emerald-200 transition-colors">
+        Done ✓
+      </button>
+    </div>`;
+  });
+
+  almost.forEach(t => {
+    const bid = blockingDeps(t)[0];
+    const blocker = getT(bid);
+    const col = CAT_COLOR[t.cat] || '#6366F1';
+    h += `<div class="do-next-row opacity-65">
+      <span class="cat-dot mt-0.5 flex-shrink-0" style="background:${col}"></span>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-600 truncate">🔒 ${esc(t.name)}</p>
+        <p class="text-xs text-amber-600">Waiting: <span class="font-semibold">${blocker ? esc(blocker.name) : '?'}</span></p>
+      </div>
+    </div>`;
+  });
+
+  h += `</div></div>`;
+  el.innerHTML = h;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: FILTER PILLS
+// ─────────────────────────────────────────────────────────────
+function renderFilters() {
+  let h = `<button class="pill ${curFilter==='all'?'active':''}" style="${curFilter==='all'?'background:#6366F1':''}" onclick="setFilter('all')">All</button>`;
+  CATS.forEach(c => {
+    const active = curFilter === c;
+    h += `<button class="pill ${active?'active':''}" style="${active?`background:${CAT_COLOR[c]}`:''}" onclick="setFilter(${JSON.stringify(c)})">${c}</button>`;
+  });
+  document.getElementById('filter-pills').innerHTML = h;
+
+  const rb = document.getElementById('ready-btn');
+  if (readyOnly) { rb.classList.add('active'); rb.style.background = '#6366F1'; }
+  else { rb.classList.remove('active'); rb.style.background = ''; }
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: VIEW BUTTONS
+// ─────────────────────────────────────────────────────────────
+function renderViewBtns() {
+  const l = document.getElementById('btn-list');
+  const g = document.getElementById('btn-gantt');
+  const on  = 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-white shadow text-slate-800 transition-all';
+  const off = 'px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-500 transition-all';
+  l.className = curView === 'list' ? on : off;
+  g.className = curView === 'gantt' ? on : off;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: STATUS BADGE HTML
+// ─────────────────────────────────────────────────────────────
+function badgeHtml(s) {
+  if (s === 'done')     return `<span class="badge bg-emerald-100 text-emerald-700">✓ Done</span>`;
+  if (s === 'overdue')  return `<span class="badge bg-red-100 text-red-600">⚠ Overdue</span>`;
+  if (s === 'blocked')  return `<span class="badge bg-amber-100 text-amber-700">🔒 Blocked</span>`;
+  if (s === 'active')   return `<span class="badge bg-indigo-100 text-indigo-700">● Active</span>`;
+  return `<span class="badge bg-slate-100 text-slate-500">↑ Upcoming</span>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: LIST VIEW
+// ─────────────────────────────────────────────────────────────
+function renderList() {
+  const el = document.getElementById('list-view');
+  if (curView !== 'list') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+
+  const cats = curFilter === 'all' ? CATS : [curFilter];
+  let h = '<div class="space-y-3">';
+
+  cats.forEach(cat => {
+    let catTasks = Object.values(tasks).filter(t => t.cat === cat);
+    if (readyOnly) catTasks = catTasks.filter(t => !t.done && status(t) !== 'blocked');
+    if (!catTasks.length) return;
+
+    const col = CAT_COLOR[cat];
+    const total = Object.values(tasks).filter(t => t.cat === cat).length;
+    const done  = Object.values(tasks).filter(t => t.cat === cat && t.done).length;
+
+    h += `<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+      <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+        <span class="cat-dot" style="background:${col}"></span>
+        <span class="text-sm font-bold text-slate-700">${cat}</span>
+        <span class="ml-auto text-xs font-semibold text-slate-400">${done}/${total}</span>
+      </div>
+      <div class="divide-y divide-slate-100">`;
+
+    catTasks.forEach(t => {
+      const st = status(t);
+      const blocking = blockingDeps(t);
+      const unl = unlocks(t.id);
+
+      // Dep chips
+      const deps = normDeps(t.deps);
+      let depChips = '';
+      if (deps.length) {
+        depChips = deps.map(d => {
+          const dt = getT(d);
+          if (!dt) return '';
+          return `<span class="inline-flex items-center gap-0.5 text-xs px-1.5 py-0.5 rounded font-medium ${dt.done ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}">
+            ${dt.done ? '✓' : '⏳'} ${esc(dt.name.length > 22 ? dt.name.slice(0,20)+'…' : dt.name)}
+          </span>`;
+        }).join('');
+      }
+
+      const stripe = st === 'blocked' ? 'task-stripe' : '';
+      const faded  = st === 'done' ? 'opacity-55' : '';
+
+      h += `<div class="task-row px-4 py-3 ${stripe} ${faded}">
+        <div class="flex items-start gap-3">
+          <div class="task-check ${t.done ? 'checked' : ''} mt-0.5" onclick="toggleDone(${t.id})">
+            ${t.done ? `<svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3.5"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-sm font-semibold cursor-pointer hover:text-indigo-600 transition-colors ${t.done ? 'line-through text-slate-400' : 'text-slate-800'}"
+                onclick="openEdit(${t.id})">${esc(t.name)}</span>
+              ${badgeHtml(st)}
+            </div>
+            ${t.notes ? `<p class="text-xs text-slate-500 mt-0.5 truncate">${esc(t.notes)}</p>` : ''}
+            <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+              <span class="text-xs text-slate-400">${fmtDate(t.s)} → ${fmtDate(t.e)}</span>
+              ${depChips}
+            </div>
+            ${st === 'done' && unl.length ? `<p class="text-xs text-emerald-600 mt-1">🔓 Unlocks: ${unl.map(u => esc(u.name)).join(', ')}</p>` : ''}
+            ${st === 'blocked' && blocking.length ? `<p class="text-xs text-amber-600 mt-1">Waiting on: ${blocking.map(d => { const dt = getT(d); return dt ? esc(dt.name) : ''; }).join(', ')}</p>` : ''}
+          </div>
+        </div>
+      </div>`;
+    });
+
+    h += `</div></div>`;
+  });
+
+  h += '</div>';
+  el.innerHTML = h;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RENDER: GANTT VIEW
+// ─────────────────────────────────────────────────────────────
+const LABEL_W = 190;
+const MONTH_W = 78;
+
+function buildMonths() {
+  const ms = [];
+  let d = new Date(TL_START);
+  while (d <= TL_END) { ms.push(new Date(d)); d.setMonth(d.getMonth() + 1); }
+  return ms;
+}
+const MONTHS = buildMonths();
+const TL_W = MONTHS.length * MONTH_W;
+
+function dateToX(ds) {
+  if (!ds) return 0;
+  const d = new Date(ds + 'T00:00:00');
+  return Math.max(0, Math.min(TL_W, (d - TL_START) / TL_MS * TL_W));
+}
+
+function renderGantt() {
+  const el = document.getElementById('gantt-view');
+  if (curView !== 'gantt') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+
+  const tod = today0();
+  const todX = dateToX(tod.toISOString().split('T')[0]);
+  const cats = curFilter === 'all' ? CATS : [curFilter];
+
+  // Month headers
+  let mHead = MONTHS.map((m, i) => {
+    const isWed = m.getFullYear() === 2027 && m.getMonth() === 5;
+    return `<div style="width:${MONTH_W}px;min-width:${MONTH_W}px" class="px-1 py-2 text-center text-xs font-semibold border-r border-slate-100 ${isWed ? 'text-yellow-600 bg-yellow-50' : 'text-slate-500'}">
+      ${m.toLocaleString('default',{month:'short'})} <span class="font-normal opacity-60">${m.getFullYear().toString().slice(2)}</span>
+    </div>`;
+  }).join('');
+
+  // Month bg columns (grid lines + wedding highlight)
+  function monthCols() {
+    return MONTHS.map((m, i) => {
+      const isWed = m.getFullYear() === 2027 && m.getMonth() === 5;
+      return `<div class="gantt-month-col" style="left:${i*MONTH_W}px;width:${MONTH_W}px;${isWed?'background:rgba(212,175,55,0.07)':''}"></div>`;
+    }).join('');
+  }
+
+  let h = `<div class="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+    <div style="overflow-x:auto">
+      <div style="min-width:${LABEL_W + TL_W + 2}px">
+
+        <!-- header row -->
+        <div class="flex border-b border-slate-200 bg-slate-50 sticky top-[57px] z-20">
+          <div style="width:${LABEL_W}px;min-width:${LABEL_W}px" class="px-3 py-2 text-xs font-bold text-slate-500 border-r border-slate-200 flex-shrink-0">Task</div>
+          <div style="width:${TL_W}px" class="flex border-l border-slate-100">${mHead}</div>
+        </div>
+
+        <!-- task rows -->
+        <div>`;
+
+  cats.forEach(cat => {
+    let catTasks = Object.values(tasks).filter(t => t.cat === cat);
+    if (readyOnly) catTasks = catTasks.filter(t => !t.done && status(t) !== 'blocked');
+    if (!catTasks.length) return;
+
+    const col = CAT_COLOR[cat];
+
+    // category header
+    h += `<div class="flex border-b border-slate-200 bg-slate-50/80">
+      <div style="width:${LABEL_W}px;min-width:${LABEL_W}px" class="px-3 py-1.5 flex items-center gap-1.5 border-r border-slate-200 flex-shrink-0">
+        <span class="cat-dot" style="background:${col}"></span>
+        <span class="text-xs font-bold text-slate-600">${cat}</span>
+      </div>
+      <div style="width:${TL_W}px;position:relative;height:28px">${monthCols()}</div>
+    </div>`;
+
+    catTasks.forEach(t => {
+      const st = status(t);
+      const x1 = dateToX(t.s);
+      const x2 = dateToX(t.e);
+      const bw = Math.max(10, x2 - x1);
+
+      let barCol = col;
+      if (st === 'blocked') barCol = '#F59E0B';
+      if (st === 'overdue') barCol = '#EF4444';
+      if (st === 'done')    barCol = '#10B981';
+
+      let barClass = 'gantt-bar';
+      if (st === 'blocked') barClass += ' blocked';
+      if (st === 'done')    barClass += ' done';
+      if (st === 'active')  barClass += ' active';
+
+      const shortName = t.name.length > 20 ? t.name.slice(0, 18) + '…' : t.name;
+
+      h += `<div class="flex border-b border-slate-100 hover:bg-indigo-50/30 transition-colors" style="min-height:36px">
+        <div style="width:${LABEL_W}px;min-width:${LABEL_W}px" class="px-3 flex items-center border-r border-slate-100 flex-shrink-0">
+          <span class="text-xs font-medium text-slate-700 cursor-pointer hover:text-indigo-600 truncate transition-colors" onclick="openEdit(${t.id})">${esc(t.name)}</span>
+        </div>
+        <div style="width:${TL_W}px;position:relative;min-height:36px">
+          ${monthCols()}
+          <div class="today-line" style="left:${todX}px"></div>
+          <div class="${barClass}" style="left:${x1}px;width:${bw}px;background:${barCol};color:${barCol}"
+            data-id="${t.id}"
+            onmouseenter="showTip(event,${t.id})" onmouseleave="hideTip()"
+            onclick="openEdit(${t.id})">
+            ${st === 'blocked' ? `<span style="position:absolute;left:3px;top:50%;transform:translateY(-50%);font-size:10px;z-index:1">🔒</span>` : ''}
+            <span style="position:absolute;left:${st==='blocked'?18:4}px;right:3px;top:50%;transform:translateY(-50%);
+              font-size:10px;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+              font-weight:700;text-shadow:0 1px 2px rgba(0,0,0,0.35)">
+              ${bw > 50 ? esc(shortName) : ''}
+            </span>
+          </div>
+        </div>
+      </div>`;
+    });
+  });
+
+  // today label over header
+  h += `</div></div></div></div>`;
+  el.innerHTML = h;
+}
+
+// ─────────────────────────────────────────────────────────────
+// GANTT TOOLTIP
+// ─────────────────────────────────────────────────────────────
+function showTip(e, id) {
+  const t = getT(id);
+  if (!t) return;
+  const st = status(t);
+  const blocking = blockingDeps(t);
+  const doneDeps = normDeps(t.deps).filter(d => { const dt = getT(d); return dt && dt.done; });
+  const unl = unlocks(id);
+
+  let h = `<div class="font-bold text-sm mb-1">${esc(t.name)}</div>`;
+  if (t.notes) h += `<div class="text-slate-300 text-xs mb-1.5">${esc(t.notes)}</div>`;
+  h += `<div class="text-slate-400 text-xs mb-2">${fmtDate(t.s)} → ${fmtDate(t.e)}</div>`;
+
+  if (blocking.length) {
+    h += `<div class="text-amber-300 text-xs mb-1.5"><b>Waiting on:</b><br>`;
+    blocking.forEach(d => { const dt = getT(d); if(dt) h += `⏳ ${esc(dt.name)}<br>`; });
+    h += `</div>`;
+  }
+  if (doneDeps.length) {
+    h += `<div class="text-emerald-400 text-xs mb-1.5"><b>Done deps:</b><br>`;
+    doneDeps.forEach(d => { const dt = getT(d); if(dt) h += `✓ ${esc(dt.name)}<br>`; });
+    h += `</div>`;
+  }
+  if (unl.length) {
+    h += `<div class="text-sky-300 text-xs"><b>Unlocks:</b><br>`;
+    unl.slice(0,4).forEach(u => { h += `🔓 ${esc(u.name)}<br>`; });
+    h += `</div>`;
+  }
+
+  const tip = document.getElementById('g-tip');
+  tip.innerHTML = h;
+  tip.classList.remove('hidden');
+  const x = Math.min(e.clientX + 14, window.innerWidth - 300);
+  const y = Math.min(e.clientY + 14, window.innerHeight - 220);
+  tip.style.left = x + 'px';
+  tip.style.top  = y + 'px';
+}
+function hideTip() {
+  document.getElementById('g-tip').classList.add('hidden');
+}
+
+// ─────────────────────────────────────────────────────────────
+// MASTER RENDER
+// ─────────────────────────────────────────────────────────────
+function render() {
+  renderSubtitle();
+  renderStats();
+  renderDoNext();
+  renderFilters();
+  renderViewBtns();
+  if (curView === 'list') {
+    renderList();
+    document.getElementById('gantt-view').classList.add('hidden');
+  } else {
+    renderGantt();
+    document.getElementById('list-view').classList.add('hidden');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ACTIONS
+// ─────────────────────────────────────────────────────────────
+function setView(v) { curView = v; render(); }
+function setFilter(f) { curFilter = f; render(); }
+function toggleReadyOnly() { readyOnly = !readyOnly; render(); }
+
+function toggleDone(id) {
+  const t = getT(id);
+  if (!t) return;
+  setSyncBadge('saving');
+  tasksRef.child(String(id)).update({ done: !t.done });
+}
+
+// ─────────────────────────────────────────────────────────────
+// TASK FORM
+// ─────────────────────────────────────────────────────────────
+function taskFormHtml(t, prefix, isEdit) {
+  const allOther = Object.values(tasks)
+    .filter(x => String(x.id) !== String(t.id))
+    .sort((a,b) => a.id - b.id);
+
+  const depsList = allOther.map(x => {
+    const chk = normDeps(t.deps).includes(Number(x.id)) ? 'checked' : '';
+    return `<label class="flex items-center gap-2 py-1 cursor-pointer hover:bg-slate-50 rounded px-1">
+      <input type="checkbox" class="dep-chk rounded text-indigo-500" value="${x.id}" ${chk}>
+      <span class="text-sm ${x.done?'text-emerald-600':'text-slate-700'} flex-1 truncate">${x.done?'✓ ':''}${esc(x.name)}</span>
+      <span class="text-xs text-slate-400 flex-shrink-0">${x.cat.split(' ')[0]}</span>
+    </label>`;
+  }).join('');
+
+  return `
+    <input type="hidden" id="${prefix}-id" value="${t.id}">
+    <div class="space-y-3">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Task name</label>
+        <input type="text" id="${prefix}-name" value="${esc(t.name)}"
+          class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Category</label>
+        <select id="${prefix}-cat" class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          ${CATS.map(c => `<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('')}
+        </select>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">Start</label>
+          <input type="date" id="${prefix}-start" value="${t.s}"
+            class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1">End</label>
+          <input type="date" id="${prefix}-end" value="${t.e}"
+            class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Notes</label>
+        <input type="text" id="${prefix}-notes" value="${esc(t.notes||'')}"
+          placeholder="Optional…"
+          class="w-full text-sm border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+      </div>
+      ${isEdit ? `<label class="flex items-center gap-2 cursor-pointer py-1">
+        <input type="checkbox" id="${prefix}-done" ${t.done?'checked':''} class="rounded text-emerald-500">
+        <span class="text-sm font-semibold text-slate-700">Mark as done</span>
+      </label>` : ''}
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1">Dependencies <span class="font-normal text-slate-400">(must complete before this)</span></label>
+        <div class="border border-slate-200 rounded-xl p-2 max-h-44 overflow-y-auto bg-slate-50">
+          ${depsList || '<p class="text-xs text-slate-400 px-1">No other tasks</p>'}
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        ${isEdit ? `<button onclick="deleteTask()" class="px-3 py-2 text-sm font-semibold text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">Delete</button>` : ''}
+        <button onclick="closeModal('${isEdit?'edit':'add'}-modal')" class="flex-1 py-2 text-sm font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors">Cancel</button>
+        <button onclick="${isEdit?'submitEdit()':'submitAdd()'}" class="flex-1 py-2 text-sm font-semibold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 transition-colors">${isEdit?'Save changes':'Add task'}</button>
+      </div>
+    </div>
+  `;
+}
+
+function readForm(prefix) {
+  const id   = parseInt(document.getElementById(`${prefix}-id`).value);
+  const name = document.getElementById(`${prefix}-name`).value.trim();
+  const cat  = document.getElementById(`${prefix}-cat`).value;
+  const s    = document.getElementById(`${prefix}-start`).value;
+  const e    = document.getElementById(`${prefix}-end`).value;
+  const notes= document.getElementById(`${prefix}-notes`).value.trim();
+  const done = prefix === 'edit'
+    ? document.getElementById('edit-done').checked
+    : false;
+  const deps = [...document.querySelectorAll('.dep-chk:checked')].map(el => parseInt(el.value));
+  return { id, name, cat, s, e, notes, done, deps };
+}
+
+// ─────────────────────────────────────────────────────────────
+// ADD
+// ─────────────────────────────────────────────────────────────
+function openAdd() {
+  const ids = Object.values(tasks).map(t => Number(t.id));
+  const newId = ids.length ? Math.max(...ids) + 1 : 51;
+  const blank = { id: newId, name:'', cat:'Foundation', s:'', e:'', done:false, deps:[], notes:'' };
+  document.getElementById('add-form-body').innerHTML = taskFormHtml(blank, 'add', false);
+  document.getElementById('add-modal').classList.remove('hidden');
+}
+
+function submitAdd() {
+  const data = readForm('add');
+  if (!data.name) { alert('Task name is required.'); return; }
+  setSyncBadge('saving');
+  tasksRef.child(String(data.id)).set(data);
+  closeModal('add-modal');
+}
+
+// ─────────────────────────────────────────────────────────────
+// EDIT
+// ─────────────────────────────────────────────────────────────
+function openEdit(id) {
+  const t = getT(id);
+  if (!t) return;
+  editId = id;
+  document.getElementById('edit-form-body').innerHTML = taskFormHtml(t, 'edit', true);
+  document.getElementById('edit-modal').classList.remove('hidden');
+}
+
+function submitEdit() {
+  if (!editId) return;
+  const data = readForm('edit');
+  setSyncBadge('saving');
+  tasksRef.child(String(editId)).set(data);
+  closeModal('edit-modal');
+  editId = null;
+}
+
+function deleteTask() {
+  if (!editId) return;
+  if (!confirm('Delete this task?')) return;
+  setSyncBadge('saving');
+  tasksRef.child(String(editId)).remove();
+  closeModal('edit-modal');
+  editId = null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// RESET
+// ─────────────────────────────────────────────────────────────
+function openReset() { document.getElementById('reset-modal').classList.remove('hidden'); }
+
+function doReset() {
+  setSyncBadge('saving');
+  closeModal('reset-modal');
+  const data = {};
+  DEFAULTS.forEach(t => { data[String(t.id)] = t; });
+  tasksRef.set(data);
+}
+
+// ─────────────────────────────────────────────────────────────
+// MODAL HELPERS
+// ─────────────────────────────────────────────────────────────
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function maybeClose(id, e) { if (e.target === document.getElementById(id)) closeModal(id); }
+
+// ─────────────────────────────────────────────────────────────
+// FIREBASE LISTENER
+// ─────────────────────────────────────────────────────────────
+tasksRef.on('value', snap => {
+  const raw = snap.val();
+
+  if (!raw) {
+    // Seed defaults
+    setSyncBadge('saving');
+    const data = {};
+    DEFAULTS.forEach(t => { data[String(t.id)] = t; });
+    tasksRef.set(data);
+    return;
+  }
+
+  tasks = {};
+  Object.entries(raw).forEach(([k, t]) => {
+    tasks[k] = {
+      ...t,
+      id:   Number(t.id || k),
+      deps: normDeps(t.deps),
+      cat:  t.cat || t.category || 'Foundation',
+      s:    t.s   || t.start || '',
+      e:    t.e   || t.end   || '',
+    };
+  });
+
+  setSyncBadge('synced');
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  render();
+}, err => {
+  setSyncBadge('error');
+  // Fallback: render defaults locally
+  tasks = {};
+  DEFAULTS.forEach(t => { tasks[String(t.id)] = { ...t }; });
+  document.getElementById('loading').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  render();
+});
+
+db.ref('.info/connected').on('value', snap => {
+  if (snap.val() === false) setSyncBadge('error');
+});
+</script>
+</body>
+</html>
