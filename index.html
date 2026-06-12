@@ -202,6 +202,35 @@
       background: #e2e8f0; margin: 0 auto 16px;
     }
 
+    /* Layout mode overrides — force phone/ipad/desktop regardless of screen size */
+    body.layout-phone .md\:hidden  { display: flex !important; }
+    body.layout-phone .md\:flex    { display: none !important; }
+    body.layout-phone .md\:block   { display: none !important; }
+    body.layout-phone #app         { padding-bottom: 6rem !important; }
+    body.layout-phone .modal-backdrop { align-items: flex-end !important; padding: 0 !important; }
+
+    body.layout-ipad .md\:hidden   { display: none !important; }
+    body.layout-ipad .md\:flex     { display: flex !important; }
+    body.layout-ipad .md\:block    { display: block !important; }
+    body.layout-ipad #app          { padding-bottom: 1.5rem !important; }
+    body.layout-ipad .modal-backdrop { align-items: center !important; padding: 16px !important; }
+
+    body.layout-desktop .md\:hidden { display: none !important; }
+    body.layout-desktop .md\:flex   { display: flex !important; }
+    body.layout-desktop .md\:block  { display: block !important; }
+    body.layout-desktop #app        { padding-bottom: 1.5rem !important; }
+    body.layout-desktop .modal-backdrop { align-items: center !important; padding: 16px !important; }
+
+    /* Layout mode selector */
+    #layout-select {
+      appearance: none; -webkit-appearance: none;
+      background: #f1f5f9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 8px center;
+      padding: 4px 24px 4px 8px; border-radius: 8px; border: none;
+      font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;
+      min-height: 30px; outline: none;
+    }
+    #layout-select:focus { box-shadow: 0 0 0 2px #a5b4fc; }
+
     /* Countdown big number */
     .countdown-number {
       font-family: 'Cormorant Garamond', Georgia, serif;
@@ -247,6 +276,13 @@
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             Add
           </button>
+          <!-- Layout mode selector -->
+          <select id="layout-select" onchange="setLayoutMode(this.value)" aria-label="Layout mode">
+            <option value="auto">Auto</option>
+            <option value="phone">📱 Phone</option>
+            <option value="ipad">🪄 iPad</option>
+            <option value="desktop">🖥 Desktop</option>
+          </select>
           <!-- Desktop reset -->
           <button onclick="openReset()" class="hidden md:flex items-center px-2 py-1.5 text-slate-400 hover:text-red-500 transition-colors rounded-lg" aria-label="Reset tasks">
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
@@ -487,6 +523,7 @@ let curView = 'overview';
 let curFilter = 'all';
 let readyOnly = false;
 let editId = null;
+let layoutMode = localStorage.getItem('layoutMode') || 'auto';
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -1043,7 +1080,8 @@ function render() {
   } else {
     showSection('timeline');
     renderFilters();
-    const isMobile = !window.matchMedia('(min-width:768px)').matches;
+    const isMobile = layoutMode === 'phone' || layoutMode === 'ipad' ||
+      (layoutMode === 'auto' && !window.matchMedia('(min-width:768px)').matches);
     const mob = document.getElementById('timeline-mobile');
     const dsk = document.getElementById('gantt-view');
     if (isMobile) {
@@ -1064,6 +1102,16 @@ function render() {
 function setView(v)         { curView = v;       render(); }
 function setFilter(f)       { curFilter = f;     render(); }
 function toggleReadyOnly()  { readyOnly = !readyOnly; render(); }
+
+function setLayoutMode(mode) {
+  layoutMode = mode;
+  localStorage.setItem('layoutMode', mode);
+  document.body.classList.remove('layout-phone', 'layout-ipad', 'layout-desktop');
+  if (mode !== 'auto') document.body.classList.add('layout-' + mode);
+  const sel = document.getElementById('layout-select');
+  if (sel) sel.value = mode;
+  render();
+}
 
 function toggleDone(id) {
   const t = getT(id); if (!t) return;
@@ -1233,6 +1281,7 @@ tasksRef.on('value', snap => {
   setSyncBadge('synced');
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
+  setLayoutMode(layoutMode);
   render();
 }, err => {
   setSyncBadge('error');
