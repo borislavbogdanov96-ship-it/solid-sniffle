@@ -13,23 +13,23 @@
   <style>
     /* ── DESIGN TOKENS ── */
     :root {
-      --primary:          oklch(0.440 0.145 272);
-      --primary-mid:      oklch(0.572 0.140 272);
-      --primary-subtle:   oklch(0.944 0.030 275);
-      --primary-border:   oklch(0.878 0.048 275);
-      --accent:           oklch(0.645 0.090 54);
-      --accent-subtle:    oklch(0.968 0.022 55);
-      --bg:               oklch(0.956 0.005 80);    /* layer 1 — warm off-white canvas */
+      --primary:          oklch(0.442 0.125 145);    /* forest green */
+      --primary-mid:      oklch(0.545 0.128 145);
+      --primary-subtle:   oklch(0.957 0.022 146);   /* light sage tint */
+      --primary-border:   oklch(0.886 0.050 147);   /* sage border */
+      --accent:           oklch(0.886 0.050 147);   /* sage green */
+      --accent-subtle:    oklch(0.968 0.018 146);
+      --bg:               oklch(0.965 0.006 80);    /* layer 1 — warm parchment canvas */
       --surface:          oklch(0.984 0.003 80);    /* layer 2 — card / panel bg */
       --surface-raised:   oklch(0.997 0.001 80);    /* layer 3 — modal / popover */
-      --surface-recessed: oklch(0.938 0.007 80);    /* layer 0 — inset / trough */
-      --border:           oklch(0.894 0.012 80);
-      --border-subtle:    oklch(0.930 0.008 80);
-      --ink:              oklch(0.148 0.022 272);
-      --ink-muted:        oklch(0.500 0.018 275);
-      --ink-faint:        oklch(0.680 0.010 275);
-      --shadow-sm:        0 1px 2px oklch(0.148 0.022 272 / 0.09), 0 1px 3px oklch(0.148 0.022 272 / 0.06);
-      --shadow-card:      0 1px 4px oklch(0.148 0.022 272 / 0.08), 0 2px 8px oklch(0.148 0.022 272 / 0.05);
+      --surface-recessed: oklch(0.944 0.010 79);    /* layer 0 — inset / trough */
+      --border:           oklch(0.876 0.018 76);    /* warm tan */
+      --border-subtle:    oklch(0.916 0.013 77);
+      --ink:              oklch(0.236 0.035 37);    /* deep warm brown */
+      --ink-muted:        oklch(0.415 0.042 37);
+      --ink-faint:        oklch(0.620 0.024 37);
+      --shadow-sm:        0 1px 2px oklch(0.236 0.035 37 / 0.09), 0 1px 3px oklch(0.236 0.035 37 / 0.06);
+      --shadow-card:      0 1px 4px oklch(0.236 0.035 37 / 0.08), 0 2px 8px oklch(0.236 0.035 37 / 0.05);
       --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
       --ease-out-quint:   cubic-bezier(0.23, 1, 0.32, 1);
     }
@@ -277,8 +277,8 @@
                   box-shadow 0.16s var(--ease-out-expo);
       -webkit-tap-highlight-color: transparent;
     }
-    .fab:hover { box-shadow: 0 6px 20px oklch(0.440 0.145 272 / 0.46); }
-    .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px oklch(0.440 0.145 272 / 0.25); }
+    .fab:hover { box-shadow: 0 6px 20px oklch(0.442 0.125 145 / 0.46); }
+    .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px oklch(0.442 0.125 145 / 0.25); }
 
     /* ── VERTICAL TIMELINE (mobile) ── */
     .tl-month-header {
@@ -1401,7 +1401,7 @@ function taskFormHtml(t, prefix, isEdit) {
   const depsList = allOther.map(x => {
     const chk = normDeps(t.deps).includes(Number(x.id)) ? 'checked' : '';
     return `<label class="flex items-center gap-3 py-2 px-2 cursor-pointer hover:bg-slate-100 rounded-xl" style="min-height:44px">
-      <input type="checkbox" class="dep-chk w-4 h-4 rounded text-indigo-500 flex-shrink-0" value="${x.id}" ${chk}>
+      <input type="checkbox" class="dep-chk w-4 h-4 rounded text-emerald-500 flex-shrink-0" value="${x.id}" ${chk}>
       <span class="text-sm ${x.done?'text-emerald-600':'text-slate-700'} flex-1 truncate">${x.done?'✓ ':''}${esc(x.name)}</span>
       <span class="text-xs text-slate-400 flex-shrink-0">${x.cat.split(' ')[0]}</span>
     </label>`;
@@ -1413,11 +1413,11 @@ function taskFormHtml(t, prefix, isEdit) {
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-name">Task name</label>
         <input type="text" id="${prefix}-name" value="${esc(t.name)}" autocomplete="off"
-          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
+          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-2">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-cat">Category</label>
-        <select id="${prefix}-cat" class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
+        <select id="${prefix}-cat" class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-2">
           ${CATS.map(c=>`<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('')}
         </select>
       </div>
@@ -1425,18 +1425,18 @@ function taskFormHtml(t, prefix, isEdit) {
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-start">Start</label>
           <input type="date" id="${prefix}-start" value="${t.s}"
-            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
+            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-2">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-end">End</label>
           <input type="date" id="${prefix}-end" value="${t.e}"
-            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
+            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-2">
         </div>
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-notes">Notes</label>
         <input type="text" id="${prefix}-notes" value="${esc(t.notes||'')}" placeholder="Optional…" autocomplete="off"
-          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
+          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:ring-2">
       </div>
       ${isEdit?`<label class="flex items-center gap-3 cursor-pointer py-2" style="min-height:44px">
         <input type="checkbox" id="${prefix}-done" ${t.done?'checked':''} class="w-5 h-5 rounded text-emerald-500">
