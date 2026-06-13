@@ -208,6 +208,9 @@
     body.layout-phone .md\:block   { display: none !important; }
     body.layout-phone #app         { padding-bottom: 6rem !important; }
     body.layout-phone .modal-backdrop { align-items: flex-end !important; padding: 0 !important; }
+    /* timeline-mobile is md:hidden but must be block, not flex */
+    body.layout-phone #timeline-mobile,
+    body.layout-ipad  #timeline-mobile { display: block !important; }
 
     body.layout-ipad .md\:hidden   { display: none !important; }
     body.layout-ipad .md\:flex     { display: flex !important; }
