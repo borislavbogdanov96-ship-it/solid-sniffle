@@ -11,49 +11,126 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <style>
-    * { box-sizing: border-box; }
+    /* ── DESIGN TOKENS ── */
+    :root {
+      --primary:          oklch(0.440 0.145 272);
+      --primary-mid:      oklch(0.572 0.140 272);
+      --primary-subtle:   oklch(0.944 0.030 275);
+      --primary-border:   oklch(0.878 0.048 275);
+      --accent:           oklch(0.645 0.090 54);
+      --accent-subtle:    oklch(0.968 0.022 55);
+      --bg:               oklch(1.000 0.000 0);
+      --surface:          oklch(0.978 0.007 278);
+      --surface-raised:   oklch(0.960 0.009 278);
+      --border:           oklch(0.912 0.010 278);
+      --border-subtle:    oklch(0.946 0.007 278);
+      --ink:              oklch(0.148 0.022 272);
+      --ink-muted:        oklch(0.500 0.018 275);
+      --ink-faint:        oklch(0.680 0.010 275);
+      --shadow-sm:        0 1px 2px oklch(0.148 0.022 272 / 0.07), 0 1px 3px oklch(0.148 0.022 272 / 0.05);
+      --shadow-card:      0 1px 4px oklch(0.148 0.022 272 / 0.06), 0 2px 8px oklch(0.148 0.022 272 / 0.04);
+      --ease-out-expo:    cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-out-quint:   cubic-bezier(0.23, 1, 0.32, 1);
+    }
 
+    * { box-sizing: border-box; }
     html { scroll-behavior: smooth; }
 
     body {
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #F6F9FC;
+      background: var(--bg);
+      color: var(--ink);
       touch-action: manipulation;
       overscroll-behavior-y: contain;
       -webkit-font-smoothing: antialiased;
     }
 
     .font-serif { font-family: 'Cormorant Garamond', Georgia, serif; }
-
-    /* Safe area */
     .pb-safe { padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); }
 
-    /* z-index: header 30, nav 40, fab 45, modal 50 */
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { transition-duration: 0ms !important; animation-duration: 0ms !important; }
+    /* ── ANIMATIONS ── */
+    @keyframes fade-up {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fade-in {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    @keyframes scale-in {
+      from { opacity: 0; transform: scale(0.96) translateY(8px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    @keyframes check-pop {
+      0%   { transform: scale(0.75); }
+      55%  { transform: scale(1.15); }
+      100% { transform: scale(1); }
+    }
+    @keyframes loading-spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse-ring {
+      0%, 100% { opacity: 0.6; }
+      50%       { opacity: 1; }
     }
 
-    /* Gantt bars */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0ms !important;
+        animation-duration: 0ms !important;
+      }
+    }
+
+    /* ── LOADING ── */
+    #loading { animation: fade-in 0.3s var(--ease-out-expo) both; }
+    .loading-ring { animation: loading-spin 1s linear infinite; transform-origin: center; }
+
+    /* ── APP SHELL ── */
+    #app { animation: fade-in 0.28s var(--ease-out-expo) both; }
+
+    /* ── OVERVIEW SECTION ENTRANCE ── */
+    #overview-section > * {
+      animation: fade-up 0.42s var(--ease-out-expo) both;
+    }
+    #overview-section > *:nth-child(1) { animation-delay: 0ms; }
+    #overview-section > *:nth-child(2) { animation-delay: 55ms; }
+    #overview-section > *:nth-child(3) { animation-delay: 110ms; }
+    #overview-section > *:nth-child(4) { animation-delay: 155ms; }
+
+    /* ── COUNTDOWN ── */
+    .countdown-number {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(80px, 22vw, 108px);
+      font-weight: 700;
+      line-height: 1;
+      color: var(--primary);
+      letter-spacing: -0.02em;
+    }
+
+    /* ── GANTT BARS ── */
     .gantt-bar {
       position: absolute; height: 26px; border-radius: 6px;
       top: 50%; transform: translateY(-50%);
-      cursor: pointer; transition: filter 0.15s; overflow: hidden;
+      cursor: pointer;
+      transition: filter 0.15s var(--ease-out-expo), box-shadow 0.15s var(--ease-out-expo);
+      overflow: hidden;
     }
-    .gantt-bar:hover { filter: brightness(1.12); }
+    .gantt-bar:hover { filter: brightness(1.10); }
     .gantt-bar.blocked {
       background-image: repeating-linear-gradient(
         -45deg, transparent, transparent 4px,
-        rgba(0,0,0,0.15) 4px, rgba(0,0,0,0.15) 8px);
+        rgba(0,0,0,0.14) 4px, rgba(0,0,0,0.14) 8px);
     }
     .gantt-bar.done {
-      opacity: 0.45;
+      opacity: 0.42;
       background-image: repeating-linear-gradient(
         -45deg, transparent, transparent 5px,
-        rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 9px);
+        rgba(255,255,255,0.28) 5px, rgba(255,255,255,0.28) 9px);
     }
     .gantt-bar.active {
-      box-shadow: 0 0 0 2px rgba(255,255,255,0.9), 0 0 12px rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 2px rgba(255,255,255,0.9),
+                  0 0 0 3px var(--primary),
+                  0 4px 12px oklch(0.440 0.145 272 / 0.22);
     }
 
     .task-stripe {
@@ -64,14 +141,17 @@
 
     .today-line {
       position: absolute; top: 0; bottom: 0; width: 2px;
-      background: #ef4444; z-index: 4; pointer-events: none;
+      background: #ef4444; opacity: 0.65; z-index: 4; pointer-events: none;
     }
 
+    /* ── PROGRESS BAR ── */
     .progress-bar {
-      background: linear-gradient(to right, #6366F1, #0891B2);
-      height: 6px; border-radius: 3px; transition: width 0.6s ease;
+      background: var(--primary);
+      height: 6px; border-radius: 3px;
+      transition: width 0.7s var(--ease-out-expo);
     }
 
+    /* ── BADGE ── */
     .badge {
       display: inline-flex; align-items: center; gap: 3px;
       padding: 2px 8px; border-radius: 9999px;
@@ -83,16 +163,22 @@
       display: inline-block; flex-shrink: 0;
     }
 
-    /* Bottom-sheet modals on mobile, centered on desktop */
+    /* ── MODALS ── */
     .modal-backdrop {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      position: fixed; inset: 0;
+      background: oklch(0.148 0.022 272 / 0.42);
+      backdrop-filter: blur(3px);
       z-index: 50; display: flex; align-items: flex-end; justify-content: center;
+      animation: fade-in 0.18s var(--ease-out-expo) both;
     }
     @media (min-width: 768px) {
       .modal-backdrop { align-items: center; padding: 16px; }
     }
+    .modal-panel {
+      animation: scale-in 0.24s var(--ease-out-expo) both;
+    }
 
-    /* Enlarged hit area for checkbox */
+    /* ── CHECKBOX ── */
     .check-wrap {
       min-width: 44px; min-height: 44px;
       display: flex; align-items: center; justify-content: center;
@@ -100,115 +186,139 @@
       padding: 10px; margin: -10px -6px -10px -10px;
     }
     .task-check {
-      width: 22px; height: 22px; border-radius: 6px;
-      border: 2px solid #cbd5e1;
+      width: 22px; height: 22px; border-radius: 7px;
+      border: 1.5px solid var(--border);
       display: flex; align-items: center; justify-content: center;
-      transition: all 0.15s; background: white; pointer-events: none;
+      transition: all 0.18s var(--ease-out-expo);
+      background: var(--bg); pointer-events: none;
     }
-    .task-check.checked { background: #10b981; border-color: #10b981; }
+    .task-check.checked {
+      background: #10b981; border-color: #10b981;
+      animation: check-pop 0.30s var(--ease-out-expo) both;
+    }
 
-    .task-row { transition: background 0.1s; }
-    .task-row:active { background: rgba(99,102,241,0.04); }
+    /* ── TASK ROWS ── */
+    .task-row { transition: background 0.12s var(--ease-out-expo); }
+    .task-row:active { background: var(--primary-subtle); }
 
+    /* ── FILTER PILLS ── */
     .pill {
       padding: 8px 16px; border-radius: 9999px; min-height: 40px;
       font-size: 13px; font-weight: 600; cursor: pointer;
-      border: 1.5px solid #e2e8f0; background: white;
-      color: #64748b; transition: all 0.15s; white-space: nowrap;
-      user-select: none; display: inline-flex; align-items: center; gap: 6px;
+      border: 1.5px solid var(--border);
+      background: var(--bg); color: var(--ink-muted);
+      transition: all 0.14s var(--ease-out-expo);
+      white-space: nowrap; user-select: none;
+      display: inline-flex; align-items: center; gap: 6px;
     }
-    .pill:hover { border-color: #cbd5e1; color: #334155; }
+    .pill:hover { border-color: var(--primary-border); color: var(--ink); background: var(--primary-subtle); }
     .pill.active { color: white !important; border-color: transparent !important; }
+    .pill:active { transform: scale(0.97); }
 
+    /* ── TOOLTIP ── */
     .g-tooltip {
       position: fixed; z-index: 200; pointer-events: none;
       max-width: 280px; min-width: 180px;
-      background: #1e293b; color: #f1f5f9;
+      background: var(--ink); color: oklch(0.946 0.007 278);
       border-radius: 12px; padding: 12px 14px;
       font-size: 12px; line-height: 1.5;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+      box-shadow: 0 8px 32px oklch(0.148 0.022 272 / 0.28);
     }
 
+    /* ── SCROLLBARS ── */
     ::-webkit-scrollbar { width: 4px; height: 4px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+    /* ── DO-NEXT ROWS ── */
     .do-next-row {
       display: flex; align-items: flex-start; gap: 10px;
       padding: 12px 14px; border-radius: 12px;
-      background: white; border: 1px solid #e2e8f0;
-      transition: border-color 0.15s; cursor: pointer;
+      background: var(--bg); border: 1px solid var(--border-subtle);
+      transition: border-color 0.14s var(--ease-out-expo),
+                  background 0.12s var(--ease-out-expo);
+      cursor: pointer;
     }
-    .do-next-row:hover { border-color: #a5b4fc; }
-    .do-next-row:active { background: #fafaff; }
+    .do-next-row:hover { border-color: var(--primary-border); background: var(--primary-subtle); }
+    .do-next-row:active { background: var(--primary-subtle); }
 
+    /* ── GANTT MONTH COLUMNS ── */
     .gantt-month-col {
       position: absolute; top: 0; bottom: 0;
-      border-right: 1px solid #f1f5f9;
+      border-right: 1px solid var(--border-subtle);
     }
 
-    /* Bottom nav */
+    /* ── BOTTOM NAV ── */
     .nav-tab {
       display: flex; flex-direction: column; align-items: center;
       justify-content: center; gap: 3px; flex: 1;
       min-height: 56px; cursor: pointer;
-      font-size: 11px; font-weight: 600; color: #94a3b8;
-      transition: color 0.15s; border: none; background: none;
+      font-size: 11px; font-weight: 600; color: var(--ink-faint);
+      transition: color 0.15s var(--ease-out-expo);
+      border: none; background: none;
       -webkit-tap-highlight-color: transparent; padding: 0;
     }
-    .nav-tab.active { color: #6366f1; }
-    .nav-tab svg { transition: transform 0.15s; }
-    .nav-tab.active svg { transform: scale(1.1); }
+    .nav-tab.active { color: var(--primary); }
+    .nav-tab svg { transition: transform 0.18s var(--ease-out-expo); }
+    .nav-tab.active svg { transform: scale(1.12); }
 
-    /* FAB */
+    /* ── FAB ── */
     .fab {
       position: fixed; right: 20px; z-index: 45;
       width: 56px; height: 56px; border-radius: 50%;
-      background: linear-gradient(135deg, #6366F1, #0891B2);
+      background: var(--primary);
       color: white; border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 4px 16px rgba(99,102,241,0.45);
-      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 4px 16px oklch(0.440 0.145 272 / 0.38);
+      transition: transform 0.16s var(--ease-out-expo),
+                  box-shadow 0.16s var(--ease-out-expo);
       -webkit-tap-highlight-color: transparent;
     }
-    .fab:active { transform: scale(0.94); box-shadow: 0 2px 8px rgba(99,102,241,0.3); }
+    .fab:hover { box-shadow: 0 6px 20px oklch(0.440 0.145 272 / 0.46); }
+    .fab:active { transform: scale(0.93); box-shadow: 0 2px 8px oklch(0.440 0.145 272 / 0.25); }
 
-    /* Vertical timeline (mobile) */
+    /* ── VERTICAL TIMELINE (mobile) ── */
     .tl-month-header {
       position: sticky; top: 57px; z-index: 10;
-      background: #F6F9FC; padding: 10px 16px 6px;
-      border-bottom: 1px solid #e2e8f0;
+      background: var(--bg); padding: 10px 16px 6px;
+      border-bottom: 1px solid var(--border-subtle);
     }
     .tl-card {
       display: flex; gap: 12px; align-items: flex-start;
-      padding: 12px 16px; background: white;
-      border-bottom: 1px solid #f1f5f9;
-      cursor: pointer; transition: background 0.1s;
+      padding: 12px 16px; background: var(--bg);
+      border-bottom: 1px solid var(--border-subtle);
+      cursor: pointer; transition: background 0.12s var(--ease-out-expo);
     }
-    .tl-card:active { background: #fafaff; }
+    .tl-card:active { background: var(--surface); }
     .tl-connector {
       display: flex; flex-direction: column; align-items: center;
       flex-shrink: 0; padding-top: 5px;
     }
-    .tl-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
-    .tl-line { width: 2px; flex: 1; min-height: 20px; background: #e2e8f0; margin-top: 4px; }
+    .tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .tl-line { width: 2px; flex: 1; min-height: 20px; background: var(--border-subtle); margin-top: 4px; }
 
-    /* Sheet drag handle */
+    /* ── SHEET HANDLE ── */
     .sheet-handle {
       width: 40px; height: 4px; border-radius: 2px;
-      background: #e2e8f0; margin: 0 auto 16px;
+      background: var(--border); margin: 0 auto 16px;
     }
 
-    /* Layout mode overrides — force phone/ipad/desktop regardless of screen size */
+    /* ── BUTTON PRESS FEEDBACK ── */
+    button:not(.nav-tab):not(.fab):not([class*="task-row"]):not([class*="do-next-row"]) {
+      transition: transform 0.10s var(--ease-out-expo);
+    }
+    button:not(.nav-tab):not(.fab):active {
+      transform: scale(0.97);
+    }
+
+    /* ── LAYOUT MODE OVERRIDES ── */
     body.layout-phone .md\:hidden  { display: flex !important; }
     body.layout-phone .md\:flex    { display: none !important; }
     body.layout-phone .md\:block   { display: none !important; }
     body.layout-phone #app         { padding-bottom: 6rem !important; }
     body.layout-phone .modal-backdrop { align-items: flex-end !important; padding: 0 !important; }
-    /* timeline-mobile is md:hidden but must be block, not flex */
     body.layout-phone #timeline-mobile,
     body.layout-ipad  #timeline-mobile { display: block !important; }
 
@@ -224,146 +334,133 @@
     body.layout-desktop #app        { padding-bottom: 1.5rem !important; }
     body.layout-desktop .modal-backdrop { align-items: center !important; padding: 16px !important; }
 
-    /* Layout mode selector */
+    /* ── LAYOUT SELECTOR ── */
     #layout-select {
       appearance: none; -webkit-appearance: none;
-      background: #f1f5f9 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 8px center;
-      padding: 4px 24px 4px 8px; border-radius: 8px; border: none;
-      font-size: 11px; font-weight: 600; color: #475569; cursor: pointer;
-      min-height: 30px; outline: none;
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E") no-repeat right 8px center;
+      padding: 4px 24px 4px 8px; border-radius: 8px;
+      border: 1px solid var(--border);
+      font-size: 11px; font-weight: 600; color: var(--ink-muted);
+      cursor: pointer; min-height: 30px; outline: none;
     }
-    #layout-select:focus { box-shadow: 0 0 0 2px #a5b4fc; }
+    #layout-select:focus { box-shadow: 0 0 0 2px var(--primary-border); }
 
-    /* Countdown big number */
-    .countdown-number {
-      font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(72px, 22vw, 100px);
-      font-weight: 700; line-height: 1;
-      background: linear-gradient(135deg, #6366F1, #0891B2);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* ── DARK MODE ── */
-    html.dark { color-scheme: dark; }
-    html.dark body        { background: #0f172a; }
-    html.dark #loading    { background: #0f172a; }
-
-    /* Surfaces */
-    html.dark header      { background-color: rgba(15,23,42,0.97) !important; border-color: #1e293b !important; }
-    html.dark nav         { background-color: rgba(15,23,42,0.97) !important; border-color: #1e293b !important; }
-    html.dark .bg-white   { background-color: #1e293b !important; }
-    html.dark .bg-slate-50,
-    html.dark .bg-slate-50\/80 { background-color: #0f172a !important; }
-    html.dark .bg-slate-100    { background-color: #334155 !important; }
-    html.dark .bg-indigo-50    { background-color: rgba(99,102,241,0.08) !important; }
-    html.dark .bg-cyan-50      { background-color: rgba(8,145,178,0.08) !important; }
-    html.dark .bg-red-50       { background-color: rgba(239,68,68,0.1) !important; }
-    html.dark .bg-emerald-50   { background-color: rgba(16,185,129,0.08) !important; }
-    html.dark .bg-amber-50     { background-color: rgba(245,158,11,0.08) !important; }
-
-    /* Status badge backgrounds */
-    html.dark .bg-emerald-100  { background-color: rgba(16,185,129,0.15) !important; }
-    html.dark .bg-red-100      { background-color: rgba(239,68,68,0.15) !important; }
-    html.dark .bg-amber-100    { background-color: rgba(245,158,11,0.15) !important; }
-    html.dark .bg-indigo-100   { background-color: rgba(99,102,241,0.15) !important; }
-    html.dark .bg-slate-100:not(nav):not(header):not([id="layout-select"]) { background-color: #1e293b !important; }
-
-    /* Text */
-    html.dark .text-slate-800  { color: #f1f5f9 !important; }
-    html.dark .text-slate-700  { color: #e2e8f0 !important; }
-    html.dark .text-slate-600  { color: #cbd5e1 !important; }
-    html.dark .text-slate-500  { color: #94a3b8 !important; }
-    html.dark .text-slate-400  { color: #64748b !important; }
-    html.dark .text-slate-300  { color: #475569 !important; }
-
-    /* Borders */
-    html.dark .border-slate-200,
-    html.dark .border-slate-100 { border-color: #334155 !important; }
-    html.dark .divide-slate-50 > * + *,
-    html.dark .divide-slate-100 > * + * { border-color: #1e293b !important; }
-
-    /* Inputs */
-    html.dark input[type="text"],
-    html.dark input[type="date"],
-    html.dark select:not(#layout-select) {
-      background-color: #0f172a !important;
-      border-color: #334155 !important;
-      color: #f1f5f9 !important;
-    }
-    html.dark input::placeholder { color: #475569 !important; }
-    html.dark .border.border-slate-200.rounded-xl.bg-slate-50 {
-      background: #0f172a !important; border-color: #334155 !important;
-    }
-
-    /* Checkbox */
-    html.dark .task-check           { background: #334155 !important; border-color: #475569 !important; }
-    html.dark .task-check.checked   { background: #10b981 !important; border-color: #10b981 !important; }
-
-    /* Pills */
-    html.dark .pill                 { background: #1e293b !important; border-color: #334155 !important; color: #94a3b8 !important; }
-    html.dark .pill.active          { color: white !important; }
-
-    /* Do Next rows */
-    html.dark .do-next-row          { background: #1e293b !important; border-color: #334155 !important; }
-    html.dark .do-next-row:active   { background: #0f172a !important; }
-
-    /* Timeline (mobile) */
-    html.dark .tl-month-header      { background: #0f172a !important; border-color: #1e293b !important; }
-    html.dark .tl-card              { background: #1e293b !important; border-color: #1e293b !important; }
-    html.dark .tl-card:active       { background: #0f172a !important; }
-    html.dark .tl-line              { background: #334155 !important; }
-
-    /* Gantt */
-    html.dark .gantt-month-col      { border-color: #1e293b !important; }
-    html.dark .hover\:bg-indigo-50\/30:hover { background-color: rgba(99,102,241,0.06) !important; }
-
-    /* Task rows */
-    html.dark .task-row:active      { background: rgba(99,102,241,0.06) !important; }
-    html.dark .task-stripe {
-      background-image: repeating-linear-gradient(
-        -45deg, transparent, transparent 8px,
-        rgba(255,255,255,0.02) 8px, rgba(255,255,255,0.02) 16px) !important;
-    }
-
-    /* Nav tabs */
-    html.dark .nav-tab              { color: #475569 !important; }
-    html.dark .nav-tab.active       { color: #818cf8 !important; }
-
-    /* Modals */
-    html.dark .sheet-handle         { background: #334155 !important; }
-    html.dark .bg-red-500           { background-color: #dc2626 !important; }
-
-    /* Progress bar background */
-    html.dark .bg-slate-100.rounded-full { background: #334155 !important; }
-
-    /* Hover states */
-    html.dark .hover\:bg-slate-200:hover  { background-color: #475569 !important; }
-    html.dark .hover\:bg-emerald-200:hover { background-color: rgba(16,185,129,0.2) !important; }
-    html.dark .hover\:bg-red-100:hover    { background-color: rgba(239,68,68,0.15) !important; }
-
-    /* Dark toggle button */
+    /* ── DARK TOGGLE ── */
     #dark-toggle {
       display: flex; align-items: center; justify-content: center;
       width: 32px; height: 30px; border-radius: 8px;
-      border: none; cursor: pointer; transition: background 0.15s;
-      background: #f1f5f9; color: #475569;
+      border: none; cursor: pointer;
+      transition: background 0.15s var(--ease-out-expo);
+      background: var(--surface); color: var(--ink-muted);
       flex-shrink: 0;
     }
-    html.dark #dark-toggle { background: #334155; color: #f1f5f9; }
-    #dark-toggle:hover { background: #e2e8f0; }
-    html.dark #dark-toggle:hover { background: #475569; }
+    #dark-toggle:hover { background: var(--surface-raised); }
+
+    /* ── DARK MODE ── */
+    html.dark { color-scheme: dark; }
+    html.dark body     { background: #0c1220; color: #eef2f8; }
+    html.dark #loading { background: #0c1220; }
+
+    html.dark header { background-color: rgba(12,18,32,0.97) !important; border-color: #1c2a40 !important; }
+    html.dark nav    { background-color: rgba(12,18,32,0.97) !important; border-color: #1c2a40 !important; }
+    html.dark .bg-white                   { background-color: #162030 !important; }
+    html.dark .bg-slate-50,
+    html.dark .bg-slate-50\/80            { background-color: #0c1220 !important; }
+    html.dark .bg-slate-100               { background-color: #1e2e44 !important; }
+    html.dark .bg-indigo-50               { background-color: oklch(0.440 0.145 272 / 0.09) !important; }
+    html.dark .bg-cyan-50                 { background-color: rgba(8,145,178,0.08) !important; }
+    html.dark .bg-red-50                  { background-color: rgba(239,68,68,0.10) !important; }
+    html.dark .bg-emerald-50              { background-color: rgba(16,185,129,0.08) !important; }
+    html.dark .bg-amber-50                { background-color: rgba(245,158,11,0.08) !important; }
+
+    html.dark .bg-emerald-100 { background-color: rgba(16,185,129,0.15) !important; }
+    html.dark .bg-red-100     { background-color: rgba(239,68,68,0.15) !important; }
+    html.dark .bg-amber-100   { background-color: rgba(245,158,11,0.15) !important; }
+    html.dark .bg-indigo-100  { background-color: oklch(0.440 0.145 272 / 0.16) !important; }
+    html.dark .bg-slate-100:not(nav):not(header):not([id="layout-select"]) { background-color: #162030 !important; }
+
+    html.dark .text-slate-800  { color: #eef2f8 !important; }
+    html.dark .text-slate-700  { color: #d4dce8 !important; }
+    html.dark .text-slate-600  { color: #b0bccf !important; }
+    html.dark .text-slate-500  { color: #7d8fa3 !important; }
+    html.dark .text-slate-400  { color: #546070 !important; }
+    html.dark .text-slate-300  { color: #3d4c5c !important; }
+    html.dark .text-indigo-700 { color: oklch(0.700 0.120 272) !important; }
+    html.dark .text-indigo-800 { color: oklch(0.640 0.130 272) !important; }
+
+    html.dark .border-slate-200,
+    html.dark .border-slate-100 { border-color: #1c2a40 !important; }
+    html.dark .divide-slate-50 > * + *,
+    html.dark .divide-slate-100 > * + * { border-color: #12202e !important; }
+
+    html.dark input[type="text"],
+    html.dark input[type="date"],
+    html.dark select:not(#layout-select) {
+      background-color: #0c1220 !important;
+      border-color: #1c2a40 !important;
+      color: #eef2f8 !important;
+    }
+    html.dark input::placeholder { color: #3d4c5c !important; }
+    html.dark .border.border-slate-200.rounded-xl.bg-slate-50 {
+      background: #0c1220 !important; border-color: #1c2a40 !important;
+    }
+
+    html.dark .task-check           { background: #1e2e44 !important; border-color: #2e4260 !important; }
+    html.dark .task-check.checked   { background: #10b981 !important; border-color: #10b981 !important; }
+
+    html.dark .pill       { background: #162030 !important; border-color: #1c2a40 !important; color: #7d8fa3 !important; }
+    html.dark .pill.active { color: white !important; }
+
+    html.dark .do-next-row       { background: #162030 !important; border-color: #1c2a40 !important; }
+    html.dark .do-next-row:hover { background: oklch(0.440 0.145 272 / 0.08) !important; }
+
+    html.dark .tl-month-header { background: #0c1220 !important; border-color: #12202e !important; }
+    html.dark .tl-card         { background: #162030 !important; border-color: #12202e !important; }
+    html.dark .tl-card:active  { background: #0c1220 !important; }
+    html.dark .tl-line         { background: #1c2a40 !important; }
+
+    html.dark .gantt-month-col { border-color: #12202e !important; }
+    html.dark .hover\:bg-indigo-50\/30:hover { background-color: oklch(0.440 0.145 272 / 0.06) !important; }
+
+    html.dark .task-row:active { background: oklch(0.440 0.145 272 / 0.06) !important; }
+    html.dark .task-stripe {
+      background-image: repeating-linear-gradient(
+        -45deg, transparent, transparent 8px,
+        rgba(255,255,255,0.018) 8px, rgba(255,255,255,0.018) 16px) !important;
+    }
+
+    html.dark .nav-tab        { color: #3d4c5c !important; }
+    html.dark .nav-tab.active { color: oklch(0.680 0.120 272) !important; }
+
+    html.dark .modal-backdrop { background: oklch(0.108 0.022 272 / 0.55) !important; }
+    html.dark .sheet-handle   { background: #1c2a40 !important; }
+    html.dark .bg-red-500     { background-color: #dc2626 !important; }
+
+    html.dark .bg-slate-100.rounded-full { background: #1e2e44 !important; }
+
+    html.dark .hover\:bg-slate-200:hover   { background-color: #1e2e44 !important; }
+    html.dark .hover\:bg-emerald-200:hover { background-color: rgba(16,185,129,0.20) !important; }
+    html.dark .hover\:bg-red-100:hover     { background-color: rgba(239,68,68,0.15) !important; }
+
+    html.dark #dark-toggle       { background: #1e2e44; color: #d4dce8; }
+    html.dark #dark-toggle:hover { background: #2a3c52; }
+    html.dark #layout-select     { background-color: #1e2e44 !important; border-color: #1c2a40 !important; color: #7d8fa3 !important; }
+
+    html.dark .countdown-number { color: oklch(0.680 0.120 272) !important; }
   </style>
 </head>
 <body class="min-h-screen">
 
   <!-- Loading -->
-  <div id="loading" class="flex flex-col items-center justify-center min-h-screen gap-4">
-    <svg class="w-12 h-12" style="color:#6366f1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9"/>
-      <path stroke-linecap="round" stroke-linejoin="round" d="M12 7c0 0-3 3-3 5s3 5 3 5 3-3 3-5-3-5-3-5z" fill="currentColor" opacity="0.3"/>
+  <div id="loading" class="flex flex-col items-center justify-center min-h-screen gap-5">
+    <svg class="loading-ring w-10 h-10" viewBox="0 0 40 40" fill="none" style="color:var(--primary)">
+      <circle cx="20" cy="20" r="16" stroke="currentColor" stroke-width="2.5" stroke-opacity="0.12"/>
+      <path d="M20 4 A16 16 0 0 1 36 20" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
-    <p class="text-slate-500 text-sm font-medium">Syncing your timeline…</p>
+    <div class="text-center">
+      <p class="font-serif text-slate-700 text-base font-medium tracking-wide">Bobby &amp; Nikol</p>
+      <p class="text-xs text-slate-400 mt-0.5">Syncing your timeline…</p>
+    </div>
   </div>
 
   <!-- App shell -->
@@ -385,7 +482,7 @@
             <button id="btn-timeline" onclick="setView('timeline')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Timeline</button>
           </div>
           <!-- Desktop add -->
-          <button onclick="openAdd()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-full hover:opacity-90 transition-opacity shadow-sm" style="background:linear-gradient(135deg,#6366F1,#0891B2)" aria-label="Add task">
+          <button onclick="openAdd()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-full transition-all shadow-sm" style="background:var(--primary)" aria-label="Add task">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             Add
           </button>
@@ -410,12 +507,11 @@
 
       <!-- OVERVIEW SECTION -->
       <div id="overview-section" class="hidden py-5 space-y-5">
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 text-center relative overflow-hidden">
-          <div class="absolute inset-0 pointer-events-none" style="background:linear-gradient(135deg,rgba(99,102,241,0.04),rgba(8,145,178,0.04))"></div>
-          <p class="text-xs font-medium text-slate-400 mb-2 tracking-widest uppercase" style="font-family:'Cormorant Garamond',serif;letter-spacing:0.18em">Days until the wedding</p>
+        <div class="bg-white rounded-2xl border border-slate-100 p-6 text-center relative overflow-hidden" style="box-shadow:var(--shadow-card)">
+          <p class="text-xs font-semibold text-slate-400 mb-3 tracking-[0.14em] uppercase" style="font-family:'Cormorant Garamond',serif">Days until the wedding</p>
           <div class="countdown-number" id="countdown-days">–</div>
-          <p class="font-serif text-xl text-slate-700 mt-3">Bobby &amp; Nikol · 11 June 2027</p>
-          <p class="text-xs text-slate-400 mt-1 tracking-wide">"Flowing Together" · Niagara Falls</p>
+          <p class="font-serif text-xl text-slate-700 mt-4 tracking-wide">Bobby &amp; Nikol &middot; 11 June 2027</p>
+          <p class="text-xs text-slate-400 mt-1.5 tracking-wide">"Flowing Together" &middot; Niagara Falls</p>
         </div>
         <div id="stats-overview"></div>
         <div id="do-next-overview"></div>
@@ -488,7 +584,7 @@
 
   <!-- Add Modal -->
   <div id="add-modal" class="modal-backdrop hidden" onclick="maybeClose('add-modal',event)">
-    <div class="bg-white w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
+    <div class="modal-panel bg-white w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
       <div class="p-5">
         <div class="sheet-handle md:hidden"></div>
         <div class="flex items-center justify-between mb-4">
@@ -504,7 +600,7 @@
 
   <!-- Edit Modal -->
   <div id="edit-modal" class="modal-backdrop hidden" onclick="maybeClose('edit-modal',event)">
-    <div class="bg-white w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
+    <div class="modal-panel bg-white w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
       <div class="p-5">
         <div class="sheet-handle md:hidden"></div>
         <div class="flex items-center justify-between mb-4">
@@ -520,7 +616,7 @@
 
   <!-- Reset Modal -->
   <div id="reset-modal" class="modal-backdrop hidden" onclick="maybeClose('reset-modal',event)">
-    <div class="bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl md:shadow-2xl p-6" onclick="event.stopPropagation()">
+    <div class="modal-panel bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl md:shadow-2xl p-6" onclick="event.stopPropagation()">
       <div class="sheet-handle md:hidden"></div>
       <h2 class="font-serif text-xl font-semibold text-slate-800 mb-2">Reset all tasks?</h2>
       <p class="text-sm text-slate-500 mb-6">This will restore all 50 default tasks and discard any custom changes. This cannot be undone.</p>
@@ -735,19 +831,19 @@ function statsHtml() {
   const pct     = Math.round(done / total * 100);
   return `
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
-      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
+      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center" style="box-shadow:var(--shadow-sm)">
         <div class="font-serif text-3xl font-bold text-emerald-500">${pct}%</div>
         <div class="text-xs text-slate-500 mt-1">Done <span class="text-slate-400">${done}/${total}</span></div>
       </div>
-      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
-        <div class="font-serif text-3xl font-bold text-indigo-500">${ready}</div>
+      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center" style="box-shadow:var(--shadow-sm)">
+        <div class="font-serif text-3xl font-bold" style="color:var(--primary)">${ready}</div>
         <div class="text-xs text-slate-500 mt-1">Ready</div>
       </div>
-      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
+      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center" style="box-shadow:var(--shadow-sm)">
         <div class="font-serif text-3xl font-bold ${blocked>0?'text-amber-500':'text-slate-300'}">${blocked}</div>
         <div class="text-xs text-slate-500 mt-1">Blocked</div>
       </div>
-      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center shadow-sm">
+      <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center" style="box-shadow:var(--shadow-sm)">
         <div class="font-serif text-3xl font-bold ${overdue>0?'text-red-500':'text-slate-300'}">${overdue}</div>
         <div class="text-xs text-slate-500 mt-1">Overdue</div>
       </div>
@@ -777,11 +873,11 @@ function doNextHtml() {
     .slice(0,3);
   if (!ready.length && !almost.length) return '';
 
-  let h = `<div class="bg-white border border-indigo-100 rounded-2xl overflow-hidden shadow-sm">
-    <div class="px-4 py-3 border-b border-indigo-100 flex items-center gap-2" style="background:linear-gradient(to right,#eef2ff,#ecfeff)">
-      <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-      <span class="text-sm font-bold text-indigo-800">Do Next</span>
-      <span class="text-xs text-indigo-400 ml-auto">${ready.length} ready${almost.length?' · '+almost.length+' almost':''}</span>
+  let h = `<div class="bg-white border border-slate-100 rounded-2xl overflow-hidden" style="box-shadow:var(--shadow-card)">
+    <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2" style="background:var(--primary-subtle)">
+      <svg class="w-4 h-4 flex-shrink-0" style="color:var(--primary)" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+      <span class="text-sm font-bold" style="color:var(--ink)">Do Next</span>
+      <span class="text-xs ml-auto" style="color:var(--ink-muted)">${ready.length} ready${almost.length?' &middot; '+almost.length+' almost':''}</span>
     </div>
     <div class="p-3 space-y-2">`;
 
@@ -829,7 +925,7 @@ function renderDoNext() {
 // FILTER PILLS
 // ─────────────────────────────────────────────────────────────
 function pillsHtml() {
-  let h = `<button class="pill ${curFilter==='all'?'active':''}" style="${curFilter==='all'?'background:#6366F1':''}" onclick="setFilter('all')">All</button>`;
+  let h = `<button class="pill ${curFilter==='all'?'active':''}" style="${curFilter==='all'?'background:var(--primary)':''}" onclick="setFilter('all')">All</button>`;
   CATS.forEach(c => {
     const active = curFilter === c;
     h += `<button class="pill ${active?'active':''}" style="${active?'background:'+CAT_COLOR[c]:''}" onclick="setFilter(${JSON.stringify(c)})">${c}</button>`;
@@ -845,7 +941,7 @@ function renderFilters() {
 
   const rb = document.getElementById('ready-btn');
   if (rb) {
-    if (readyOnly) { rb.classList.add('active'); rb.style.background='#6366F1'; rb.style.color='white'; rb.style.borderColor='transparent'; }
+    if (readyOnly) { rb.classList.add('active'); rb.style.background='var(--primary)'; rb.style.color='white'; rb.style.borderColor='transparent'; }
     else           { rb.classList.remove('active'); rb.style.background=''; rb.style.color=''; rb.style.borderColor=''; }
   }
 }
@@ -874,7 +970,7 @@ function badgeHtml(s) {
   if (s==='done')    return `<span class="badge bg-emerald-100 text-emerald-700"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>Done</span>`;
   if (s==='overdue') return `<span class="badge bg-red-100 text-red-600"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>Overdue</span>`;
   if (s==='blocked') return `<span class="badge bg-amber-100 text-amber-700"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>Blocked</span>`;
-  if (s==='active')  return `<span class="badge bg-indigo-100 text-indigo-700"><svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Active</span>`;
+  if (s==='active')  return `<span class="badge" style="background:var(--primary-subtle);color:var(--primary)"><svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>Active</span>`;
   return `<span class="badge bg-slate-100 text-slate-500"><svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>Upcoming</span>`;
 }
 
@@ -895,7 +991,7 @@ function renderList() {
     const total = Object.values(tasks).filter(t => t.cat === cat).length;
     const done  = Object.values(tasks).filter(t => t.cat === cat && t.done).length;
 
-    h += `<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+    h += `<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden" style="box-shadow:var(--shadow-sm)">
       <div class="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
         <span class="cat-dot" style="background:${col}"></span>
         <span class="text-sm font-bold text-slate-700">${cat}</span>
@@ -993,15 +1089,15 @@ function renderTimelineMobile() {
     const isCur   = key === todKey;
 
     h += `<div class="tl-month-header flex items-center gap-2">
-      <span class="font-serif text-base font-semibold ${isCur?'text-indigo-700':isPast?'text-slate-400':'text-slate-700'}">${g.label}</span>
-      ${isCur?'<span class="text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">Now</span>':''}
+      <span class="font-serif text-base font-semibold ${isPast?'text-slate-400':'text-slate-700'}" ${isCur?'style="color:var(--primary)"':''}>${g.label}</span>
+      ${isCur?'<span class="text-xs font-bold px-2 py-0.5 rounded-full" style="color:var(--primary);background:var(--primary-subtle)">Now</span>':''}
     </div>
     <div class="bg-white border-b border-slate-100">`;
 
     g.tasks.forEach((t, ti) => {
       const st    = status(t);
       const col   = CAT_COLOR[t.cat] || '#6366F1';
-      const dotC  = st==='done'?'#10b981':st==='overdue'?'#ef4444':st==='blocked'?'#f59e0b':st==='active'?'#6366f1':col;
+      const dotC  = st==='done'?'#10b981':st==='overdue'?'#ef4444':st==='blocked'?'#f59e0b':st==='active'?'var(--primary)':col;
       const isLast = ti === g.tasks.length - 1;
 
       h += `<div class="tl-card" onclick="openEdit(${t.id})">
@@ -1065,7 +1161,7 @@ function renderGantt() {
 
   const mHead = MONTHS.map(m => {
     const isWed = m.getFullYear()===2027 && m.getMonth()===5;
-    return `<div style="width:${MONTH_W}px;min-width:${MONTH_W}px" class="px-1 py-2 text-center text-xs font-semibold border-r border-slate-100 ${isWed?'text-yellow-600 bg-yellow-50':'text-slate-500'}">
+    return `<div style="width:${MONTH_W}px;min-width:${MONTH_W}px;${isWed?'color:var(--accent);background:var(--accent-subtle)':''}" class="px-1 py-2 text-center text-xs font-semibold border-r border-slate-100 ${isWed?'':'text-slate-500'}">
       ${m.toLocaleString('default',{month:'short'})} <span class="font-normal opacity-60">${m.getFullYear().toString().slice(2)}</span>
     </div>`;
   }).join('');
@@ -1073,11 +1169,11 @@ function renderGantt() {
   function monthCols() {
     return MONTHS.map((m,i) => {
       const isWed = m.getFullYear()===2027 && m.getMonth()===5;
-      return `<div class="gantt-month-col" style="left:${i*MONTH_W}px;width:${MONTH_W}px;${isWed?'background:rgba(212,175,55,0.07)':''}"></div>`;
+      return `<div class="gantt-month-col" style="left:${i*MONTH_W}px;width:${MONTH_W}px;${isWed?'background:var(--accent-subtle)':''}"></div>`;
     }).join('');
   }
 
-  let h = `<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+  let h = `<div class="bg-white rounded-2xl border border-slate-100 overflow-hidden" style="box-shadow:var(--shadow-sm)">
     <div style="overflow-x:auto">
       <div style="min-width:${LABEL_W+TL_W+2}px">
         <div class="flex border-b border-slate-200 bg-slate-50 sticky top-[57px] z-20">
@@ -1115,9 +1211,9 @@ function renderGantt() {
       if (st==='active')  barClass+=' active';
       const shortName = t.name.length>20 ? t.name.slice(0,18)+'…' : t.name;
 
-      h += `<div class="flex border-b border-slate-100 hover:bg-indigo-50/30 transition-colors" style="min-height:40px">
+      h += `<div class="flex border-b border-slate-100 transition-colors" style="min-height:40px" onmouseenter="this.style.background='var(--primary-subtle)'" onmouseleave="this.style.background=''">
         <div style="width:${LABEL_W}px;min-width:${LABEL_W}px" class="px-3 flex items-center border-r border-slate-100 flex-shrink-0">
-          <span class="text-xs font-medium text-slate-700 cursor-pointer hover:text-indigo-600 truncate transition-colors" onclick="openEdit(${t.id})">${esc(t.name)}</span>
+          <span class="text-xs font-medium text-slate-700 cursor-pointer truncate transition-colors" style="--hover-col:var(--primary)" onclick="openEdit(${t.id})" onmouseenter="this.style.color='var(--primary)'" onmouseleave="this.style.color=''">${esc(t.name)}</span>
         </div>
         <div style="width:${TL_W}px;position:relative;min-height:40px">
           ${monthCols()}
@@ -1274,11 +1370,11 @@ function taskFormHtml(t, prefix, isEdit) {
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-name">Task name</label>
         <input type="text" id="${prefix}-name" value="${esc(t.name)}" autocomplete="off"
-          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-cat">Category</label>
-        <select id="${prefix}-cat" class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+        <select id="${prefix}-cat" class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
           ${CATS.map(c=>`<option value="${c}" ${t.cat===c?'selected':''}>${c}</option>`).join('')}
         </select>
       </div>
@@ -1286,18 +1382,18 @@ function taskFormHtml(t, prefix, isEdit) {
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-start">Start</label>
           <input type="date" id="${prefix}-start" value="${t.s}"
-            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-end">End</label>
           <input type="date" id="${prefix}-end" value="${t.e}"
-            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+            class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
         </div>
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-600 mb-1.5" for="${prefix}-notes">Notes</label>
         <input type="text" id="${prefix}-notes" value="${esc(t.notes||'')}" placeholder="Optional…" autocomplete="off"
-          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+          class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:ring-2">
       </div>
       ${isEdit?`<label class="flex items-center gap-3 cursor-pointer py-2" style="min-height:44px">
         <input type="checkbox" id="${prefix}-done" ${t.done?'checked':''} class="w-5 h-5 rounded text-emerald-500">
@@ -1312,7 +1408,7 @@ function taskFormHtml(t, prefix, isEdit) {
       <div class="flex gap-3 pt-1 pb-2">
         ${isEdit?`<button onclick="deleteTask()" class="px-4 text-sm font-semibold text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-colors flex items-center" style="min-height:48px" aria-label="Delete task">Delete</button>`:''}
         <button onclick="closeModal('${isEdit?'edit':'add'}-modal')" class="flex-1 text-sm font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors" style="min-height:48px">Cancel</button>
-        <button onclick="${isEdit?'submitEdit()':'submitAdd()'}" class="flex-1 text-sm font-semibold text-white rounded-xl hover:opacity-90 transition-opacity" style="min-height:48px;background:linear-gradient(135deg,#6366F1,#0891B2)">${isEdit?'Save':'Add task'}</button>
+        <button onclick="${isEdit?'submitEdit()':'submitAdd()'}" class="flex-1 text-sm font-semibold text-white rounded-xl transition-all" style="min-height:48px;background:var(--primary)">${isEdit?'Save':'Add task'}</button>
       </div>
     </div>`;
 }
