@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "designparser": {
+      "command": "npx",
+      "args": ["-y", "designparser-mcp"]
+    }
+  }
+}
