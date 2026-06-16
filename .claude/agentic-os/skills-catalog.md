@@ -69,3 +69,16 @@ Independent of the PM pipeline; invoke on demand. Mirrors `/agent-pm-next`: stat
 - **Parallel:** `/agent-copy` + `/agent-states` after UX; `/agent-analytics` alongside once journeys exist.
 - **Logs:** each step appends dated bullets to `docs/design/decisions.md` and `assumptions.md` (lightweight, no IDs).
 - **Loads from business-brain:** `context.md`, `conventions.md`, glossary.
+
+---
+
+## Codebase Navigation (On-Demand)
+
+| Command | Produces | Notes |
+|---|---|---|
+| `/agent-navigation-map` | `NAVIGATION.md` at project root (+ module-level files only for genuinely large subfolders) | Manual, on-demand — not automated/scheduled. Run when starting serious work on a codebase that doesn't have an index yet, or to refresh a stale one. |
+
+- **Auto-read:** `CLAUDE.md` tells Claude Code to read `NAVIGATION.md` at session start if present — no further wiring needed.
+- **Cross-check protocol:** every generated `NAVIGATION.md` ends with an embedded instruction telling agents to verify against the real filesystem rather than trust a stale index, and to log navigation friction.
+- **Friction handling:** folded into the existing pattern library, not a separate system — friction gets logged to `.claude/agentic-os/learnings.md` (Rule of Two: recurring friction graduates to `patterns/`).
+- **Deliberately excluded:** no nightly regeneration pipeline, no central cross-repo knowledge-graph, no scheduled compute/service account. Those require persistent infra this setup doesn't have (ephemeral, repo-scoped Claude Code sessions) and assume a multi-repo workspace scale that doesn't match personal-project use.
