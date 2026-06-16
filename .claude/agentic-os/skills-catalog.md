@@ -76,9 +76,10 @@ Independent of the PM pipeline; invoke on demand. Mirrors `/agent-pm-next`: stat
 
 | Command | Produces | Notes |
 |---|---|---|
-| `/agent-navigation-map` | `NAVIGATION.md` at project root (+ module-level files only for genuinely large subfolders) | Manual, on-demand — not automated/scheduled. Run when starting serious work on a codebase that doesn't have an index yet, or to refresh a stale one. |
+| `/agent-navigation-map` | `NAVIGATION.md` at project root (+ module-level files only for genuinely large subfolders) | Manual, on-demand — the only way a `NAVIGATION.md` is created for the first time. Run when starting serious work on a codebase that doesn't have an index yet. |
 
 - **Auto-read:** `CLAUDE.md` tells Claude Code to read `NAVIGATION.md` at session start if present — no further wiring needed.
+- **Auto-refresh:** `wrap-up` Step 4d refreshes an *existing* `NAVIGATION.md` at session end if the session changed anything outside `.claude/` — this is the substitute for the original package's nightly cron pipeline, using the session-end checkpoint that already exists instead of new infra. It never creates a `NAVIGATION.md` from scratch; only `/agent-navigation-map` does that.
 - **Cross-check protocol:** every generated `NAVIGATION.md` ends with an embedded instruction telling agents to verify against the real filesystem rather than trust a stale index, and to log navigation friction.
 - **Friction handling:** folded into the existing pattern library, not a separate system — friction gets logged to `.claude/agentic-os/learnings.md` (Rule of Two: recurring friction graduates to `patterns/`).
 - **Deliberately excluded:** no nightly regeneration pipeline, no central cross-repo knowledge-graph, no scheduled compute/service account. Those require persistent infra this setup doesn't have (ephemeral, repo-scoped Claude Code sessions) and assume a multi-repo workspace scale that doesn't match personal-project use.

@@ -4,8 +4,11 @@ MODE: Agent (file creation required)
 
 INPUT:
 - The current project's directory tree and source files. Run from the root of whatever
-  project/repo you want mapped — this is **on-demand**, not automatic, and not scoped to any
-  particular project.
+  project/repo you want mapped.
+- Two triggers: manual (you run this command directly — the only way a `NAVIGATION.md` gets
+  *created* for the first time), or automatic refresh of an *existing* `NAVIGATION.md` as
+  Step 4d of the `wrap-up` skill at session end, if this session changed files outside `.claude/`.
+  Wrap-up never creates one from scratch — only this command does that.
 - If `NAVIGATION.md` already exists at the target root, read it first and diff against the
   real filesystem rather than starting from scratch.
 
