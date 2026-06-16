@@ -18,5 +18,11 @@
   "statusLine": {
     "type": "command",
     "command": "bash \"$CLAUDE_PROJECT_DIR/.claude/statusline-command.sh\""
+  },
+  "mcpServers": {
+    "designparser": {
+      "command": "npx",
+      "args": ["-y", "designparser-mcp"]
+    }
   }
 }
