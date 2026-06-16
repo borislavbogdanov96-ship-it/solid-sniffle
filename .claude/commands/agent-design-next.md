@@ -53,15 +53,15 @@ PROCESS:
      - INPUT: journeys (01), states (04) if present
      - OUTPUT: `docs/design/analytics/` — events, funnels, KPIs
 
-   - 06 **Prototype** — `admin-panel-prototype` skill
+   - 06 **Prototype** — build directly (main session or `sub-opus`), or invoke a project-specific prototype skill if one exists
      - INPUT: UX specs + copy + states
      - OUTPUT: `docs/design/prototype/`
      - **CONDITIONAL** — only when the feature has screens to prototype. Skip for non-screen work (policy/eligibility/back-end-only changes) and say so.
 
    - 07 **Ship** (optional, terminal) — `google-apps-script-deploy` skill
      - INPUT: a finished, self-contained prototype HTML from 06
-     - OUTPUT: a shareable nexo.com `/exec` link (deployment recorded in the project's `.claude/`)
-     - **OPTIONAL** — invoke only when you need a stakeholder-shareable link (async sign-off, sharing with people who won't run it locally), not for iteration. Build and iterate locally via the Preview MCP first; ship a snapshot at a milestone. NOT a build step — it publishes, it doesn't generate. Multi-file/iframe-combiner prototypes must be a single self-contained file first.
+     - OUTPUT: a shareable link (deployment recorded in the project's `.claude/`)
+     - **OPTIONAL** — invoke only when you need a stakeholder-shareable link (async sign-off, sharing with people who won't run it locally), not for iteration. Build and iterate locally first; ship a snapshot at a milestone. NOT a build step — it publishes, it doesn't generate. Multi-file/iframe-combiner prototypes must be a single self-contained file first.
 
 4. **Build a status table:** for each stage 01–06, mark ✅ if its output folder has real (non-template) content, ◐ if started/partial, ❌ if missing. For 06, mark **N/A** if the feature has no screens. Show 07 **Ship** as a separate optional line (✅ if a link exists in `.claude/deployment.md`, else "—") — it is not part of the completeness gate.
 

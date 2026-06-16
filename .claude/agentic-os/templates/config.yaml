@@ -3,22 +3,22 @@
 # knows the channels, people, and vendors for THIS project without asking.
 
 project:
-  name:            # short kebab-case slug, e.g. nexo-card-limit-increase
-  jira_epic:       # e.g. CARD-3552
+  name:            # short kebab-case slug, e.g. my-project-feature
+  jira_epic:       # e.g. PROJ-123, if tracked
   status:          # discovery | design | build | launch | done
   owner: Borislav Bogdanov
 
-slack_channels:    # channels where this project is discussed
-  - name:          # e.g. #nexo-card-product
+slack_channels:    # channels where this project is discussed, if any
+  - name:          # e.g. #my-project
     purpose:       # what it's used for
 
-stakeholders:      # decision-makers and reviewers for this project
+stakeholders:      # decision-makers and reviewers for this project, if any
   - name:
     role:
     cares_about:   # what they'll react to (for managing-up)
 
-vendors:           # external partners involved (issuers, processors, enrichment)
-  - name:          # e.g. DiPocket / Zenus / Snowdrop
+vendors:           # external partners/services involved, if any
+  - name:
     mechanism:     # 1-line: how they fit (link to vendor deep-dive if it exists)
 
 teams:             # internal eng/design/data teams involved

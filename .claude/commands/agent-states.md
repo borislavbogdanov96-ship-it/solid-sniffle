@@ -23,19 +23,13 @@ THE NINE STATE CATEGORIES (walk every screen through all nine):
 2. **Empty** — first-use, no-data, no-results. Specify the message and the primary action out of empty.
 3. **Error** — validation errors, network failures, declined actions. Specify the message, the recovery path, and whether state is preserved.
 4. **Success** — confirmation of a completed action. Specify what changes, what the next step is, and any celebratory/neutral treatment.
-5. **Ineligible** — user does not qualify (region, tier, AUM threshold, product availability). Specify what they see and the alternative offered.
+5. **Ineligible** — user does not qualify (region, tier, threshold, product availability). Specify what they see and the alternative offered.
 6. **Returning** — user who has been here before / partially completed. Specify resume vs restart behaviour.
 7. **Interrupted** — user leaves mid-flow (app backgrounded, session timeout, OTP wait). Specify what is saved and how they re-enter.
 8. **Abandoned** — user drops and does not return. Specify any re-engagement (reminder, notification) and data retention.
-9. **Backend / Validation failure** — the system fails behind the scenes (issuer down, KYC provider timeout, 3DS challenge fails). Specify the user-facing message vs the internal failure, and the fallback.
+9. **Backend / Validation failure** — the system fails behind the scenes (a dependency is down, a provider times out, a verification step fails). Specify the user-facing message vs the internal failure, and the fallback.
 
-DOMAIN HOOKS (Nexo Card — apply when relevant):
-- **KYC tiers / EDD** — ineligible and interrupted states often hinge on KYC status; specify what each tier sees.
-- **Soft PoA** — non-EEA users may hit a locked/ineligible state until Proof of Address clears; specify the gated experience.
-- **Issuer split (DiPocket / Zenus)** — eligibility and error copy can differ by issuer/region; note where states diverge.
-- **3DS** — online-transaction flows need explicit challenge, timeout, and failure states.
-- **Push Provisioning** — wallet-add flows need device-unsupported and failure states.
-(Source domain terms: global CLAUDE.md glossary + `agentic-os/business-brain/glossary.md`. Do not invent thresholds or rules — if a number or policy is unknown, log it as an assumption.)
+DOMAIN HOOKS: pull any product-specific gating (identity/verification tiers, region/provider splits, external-challenge flows) from `agentic-os/business-brain/glossary.md` if populated. Do not invent thresholds or rules — if a number or policy is unknown, log it as an assumption.
 
 PER-STATE SPEC (capture for each state you specify):
 - **Trigger** — what puts the user in this state
@@ -52,7 +46,7 @@ PROCESS:
 5. Surface, in your summary to the user, every state that is **N/A**, **missing a design**, or **resting on an assumption** — these are the cheap-to-fix-now risks.
 
 OUTPUT FORMAT:
-- Markdown, Confluence-ready (publishable to the personal space alongside the PRD if requested).
+- Markdown, publishable to your wiki/Confluence alongside the PRD if requested and configured.
 - One file per screen + `States-Coverage-Matrix.md` (rows = screens, columns = the nine states, cells = ✅ / N/A / ⚠️ missing).
 
 QUALITY GATE (run before finishing):

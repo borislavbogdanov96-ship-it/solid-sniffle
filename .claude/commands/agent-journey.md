@@ -41,7 +41,7 @@ Walk the user from trigger → completion. Name every **drop-off point** explici
 CONTENT — Future Journey:
 Narrative + step list of the intended experience, step by step, each step naming the screen(s) it implies (the screen inventory `/agent-ux-spec` will consume).
 
-DOMAIN HOOKS (Nexo Card): account/KYC walls, Soft PoA gating for non-EEA, issuer/region eligibility, AUM thresholds, push-provisioning. Do not invent rules — log unknowns as assumptions.
+DOMAIN HOOKS: pull any product-specific gates (account/identity walls, eligibility rules, thresholds) from `agentic-os/business-brain/` if populated. Do not invent rules — log unknowns as assumptions.
 
 PROCESS:
 1. Confirm/ask the discovery gate items.

@@ -8,7 +8,7 @@ The full context for this setup lives in:
 **At every session start:** Read `.claude/agentic-os/agent-behavior.md` — it contains session-start orientation, proactive observation rules, and wrap-up detection behavior.
 
 **Business context files (load when relevant):**
-- `.claude/agentic-os/business-brain/nexo-context.md` — product, role, strategic direction
+- `.claude/agentic-os/business-brain/context.md` — product, role, strategic direction
 - `.claude/agentic-os/business-brain/team.md` — team composition and contacts
 - `.claude/agentic-os/business-brain/glossary.md` — full domain glossary
 - `.claude/agentic-os/business-brain/conventions.md` — delivery process, doc structure, available skills
@@ -18,16 +18,6 @@ The full context for this setup lives in:
 **Knowledge architecture:** `.claude/agentic-os/knowledge-architecture.md` — the 4-layer context model (L0 global → L1 workspace → L2 zone → L3 project), the **Rule of Two** (a fact moves up one layer the 2nd time it's needed outside its home; move-don't-copy + tombstone), and the output-routing table. Consult when deciding where a new fact/file/rule belongs.
 
 **Pattern library:** `.claude/agentic-os/patterns/` — generalized failure post-mortems (vendor surprises, spec drift, regulatory surprises, tooling traps). Check `patterns/README.md` before repeating a class of task that has bitten before. `learnings.md` is the raw stream; `patterns/` is the deduplicated layer above it.
-
----
-
-## Nexo Card Knowledge Center
-
-Primary source of truth for all Nexo Card product content:
-```
-<SET-YOUR-KNOWLEDGE-CENTER-PATH>/_knowledge-center/
-```
-This was a local Mac path in the original setup; it is not available in web/mobile cloud sessions. Point it at a repo-committed location (or a synced source) if you need it on mobile. See `CLAUDE.md` inside for the folder map; use `nexo-card-state-april-2026.md` at root for a synthesized product snapshot.
 
 ---
 
@@ -48,10 +38,10 @@ Three subagents keep the main context clean and route work to the cheapest capab
 Routing decisions are made WHEN THE PLAN IS WRITTEN, not mid-flow. Deciding mid-session never happens — by then momentum and built-up context always win, and the work gets done inline. So: **every `TodoWrite` item carries a route tag in its text**, assigned up front.
 
 ```
-- [ ] [haiku]  Pull the 3 Confluence PnL pages and extract the headings
-- [ ] [sonnet] Draft the limits-increase spec section
-- [ ] [opus]   Audit web + mobile tracking coverage across the codebase
-- [ ] [main]   Create the CARD Jira ticket  (external write — never delegate)
+- [ ] [haiku]  Pull the 3 source pages and extract the headings
+- [ ] [sonnet] Draft the spec section
+- [ ] [opus]   Audit tracking coverage across the codebase
+- [ ] [main]   Create the Jira/Linear ticket  (external write — never delegate)
 ```
 
 When a step starts, honor its tag: `[haiku]/[sonnet]/[opus]` → spawn that subagent; `[main]` → do it here. If a step has no tag, that's a bug — tag it before starting.
@@ -70,9 +60,9 @@ The middle tier is the workhorse — most drafting and rewriting belongs on `[so
 
 - Conversation context already built up here, or active back-and-forth iteration with me.
 - Multi-step orchestration where intermediate results shape the next step; decisions about project direction.
-- **Any external write** — Jira, Slack, Confluence, Monday. Needs my skills, continuity, sign-off.
+- **Any external write** — Jira, Slack, Confluence, or equivalent. Needs my skills, continuity, sign-off.
 - Preview verification (`preview_*`) and design-review loops.
-- Iterative prototypes/mockups. (A locked-spec one-shot prototype → `[opus]`, invoking `admin-panel-prototype` + `nexo-design-system`.)
+- Iterative prototypes/mockups. (A locked-spec one-shot prototype → `[opus]`.)
 
 ### Precedence — read in order
 
@@ -101,20 +91,7 @@ The middle tier is the workhorse — most drafting and rewriting belongs on `[so
 
 ## Key Domain Terms
 
-| Term | Meaning |
-|------|---------|
-| BIN | First 6–8 digits of a card number identifying the issuer/product |
-| DiPocket | Mastercard card issuer (EEA, UK, LATAM) |
-| Zenus | Visa card issuer (~82 global countries) |
-| EDD | Enhanced Due Diligence — higher-risk KYC tier |
-| Location_KYC | Country of the client's identity document |
-| Location | Country of residence |
-| Soft PoA | Proof of Address flow for non-EEA users to unlock card access |
-| Push Provisioning | In-app flow to add card directly to Apple/Google Wallet |
-| AUM | Assets Under Management — used for eligibility thresholds |
-| 3DS | 3-D Secure authentication for online transactions |
-
-Full glossary: `.claude/agentic-os/business-brain/glossary.md`
+Domain-specific terms live in `.claude/agentic-os/business-brain/glossary.md` — currently a placeholder. Fill it in as terms come up so Claude doesn't have to be re-taught them every session.
 
 ---
 
@@ -138,7 +115,6 @@ Every MCP connector / external tool call inherits one rule: **on failure → ret
 |---|---|
 | Slack MCP | Draft the message for manual send — never invent the channel state |
 | Browser (Chrome/Playwright) | `WebFetch` → `curl` (curl is in the `ask` list) |
-| Data warehouse (AI BI) | Tableau MCP view; else state "data not available" |
 | Jira MCP / auth missing | Copy-paste-ready ticket content (see `patterns/jira-auth-precheck.md`) |
 | Confluence write | Local markdown draft + flag for manual publish |
 

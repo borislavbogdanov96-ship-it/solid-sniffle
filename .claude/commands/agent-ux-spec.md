@@ -6,7 +6,7 @@ INPUT:
 - Journeys from `docs/design/journeys/` (the screen inventory in the future journey). If no journey exists, run `/agent-journey` first or derive a screen inventory from the described flow and flag it.
 
 OUTPUT:
-`docs/design/ux/` — one spec file per screen (e.g. `Screen-01-<name>.md`), plus a `Screen-Index.md` listing all screens and their navigation relationships. Use this output as input to `/agent-copy` (copy is written per screen), `/agent-states` (states are specified per screen), and `admin-panel-prototype` (the prototype is built from these specs).
+`docs/design/ux/` — one spec file per screen (e.g. `Screen-01-<name>.md`), plus a `Screen-Index.md` listing all screens and their navigation relationships. Use this output as input to `/agent-copy` (copy is written per screen), `/agent-states` (states are specified per screen), and whatever builds the prototype (06 — see `/agent-design-next`).
 
 ---
 
@@ -23,12 +23,12 @@ PER-SCREEN SPEC STRUCTURE:
 4. **Components** — each element on screen (inputs, buttons, lists, cards), with its purpose and any data it shows.
 5. **Actions** — every interactive action, what it does, and where it leads.
 6. **Navigation** — relationship to other screens (next/prev/branch); modal vs full screen.
-7. **Validation & rules** — input constraints, eligibility gates, required fields, business rules (e.g. KYC tier checks, region/issuer gates). Do not invent rules — log unknowns as assumptions.
+7. **Validation & rules** — input constraints, eligibility gates, required fields, business rules. Do not invent rules — log unknowns as assumptions.
 8. **States** — name the states this screen must handle, and hand the full specification to `/agent-states` (don't duplicate; reference).
 9. **Open questions** — anything unresolved, logged also to `docs/design/decisions.md` / `assumptions.md`.
 
 CONSTRAINTS:
-- Follow the Nexo design system (`nexo-design-system` skill) for component vocabulary, spacing, and patterns.
+- Follow the project's own design system if one exists (look for a design-system skill or doc); otherwise use clean, conventional UI patterns and say so.
 - Mobile-first unless the journey is explicitly admin/web.
 - Be specific: "primary CTA: *Add to Apple Wallet*, full-width, bottom-anchored" — not "a button."
 - Reference, don't restate: copy lives in `/agent-copy`, full state specs live in `/agent-states`.

@@ -7,11 +7,9 @@ description: >
   research across many sources, multi-file or multi-document review, security/
   compliance analysis, and complex reasoning with many interacting constraints
   where the reasoning IS the deliverable. Also use for building an HTML
-  prototype/mockup from a locked spec — when so, you MUST invoke the
-  admin-panel-prototype and nexo-design-system skills for fidelity, and return the
-  file for the main session to preview-verify and iterate. Do NOT use for tasks
-  where the user is actively iterating — those stay in the main session. Do NOT
-  perform external
+  prototype/mockup from a locked spec, returning the file for the main session
+  to preview-verify and iterate. Do NOT use for tasks where the user is
+  actively iterating — those stay in the main session. Do NOT perform external
   writes (Jira/Slack/Confluence/Monday) — return findings for the main session
   to action.
 model: opus

@@ -81,24 +81,17 @@ For each artifact without a local file:
 1. Create the file in the correct folder
 2. Mirror the key facts (title, date, overview, links, status) — do not copy verbatim, summarise concisely
 3. Update the folder's `index.md` if one exists
-4. If the change affects a root-level snapshot file (e.g., `nexo-card-state-april-2026.md`), update it too
+4. If the change affects a root-level snapshot/status file for the project, update it too
 
 If there are no gaps → note "Local sync: up to date" and move on. Do not pad.
 
 ---
 
-### Step 5 — Monday Sync
+### Step 5 — Board/Tracker Sync (optional)
 
-Use the `nexo-card-monday-manager` skill in sync mode.
+If the project uses an external board or tracker (Monday, Trello, Linear, etc.) and a sync skill/MCP for it is configured, run it now with the session summary from Step 1 as context.
 
-Pass the session summary from Step 1 as context. The skill will:
-- Match session artifacts to Monday board items
-- Update statuses, release dates, and group placements
-- Create new items for untracked features
-- Update `_knowledge-center/14-roadmap/on-focus.md`
-- Print a sync report
-
-If no external artifacts were produced this session → note "Monday sync: nothing to sync" and move on.
+If no such tool is configured, or no external artifacts were produced this session → note "Board sync: n/a" and move on.
 
 ---
 

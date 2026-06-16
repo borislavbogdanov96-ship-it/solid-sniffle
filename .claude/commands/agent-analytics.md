@@ -33,7 +33,7 @@ CONTENT — KPIs (`KPIs.md`):
 - Distinguish leading (activation, completion rate) from lagging (retention, AUM impact) indicators.
 - Do not invent targets — mark unknown targets TBD and log to `docs/design/assumptions.md`.
 
-DOMAIN HOOKS (Nexo Card): activation = card added to wallet / first transaction; eligibility-gated funnels (KYC tier, Soft PoA, region/issuer); 3DS success rate; push-provisioning completion. Reference real metric definitions where known; otherwise log as assumptions.
+DOMAIN HOOKS: pull activation, eligibility-gated, and completion metrics specific to this product/feature from `agentic-os/business-brain/glossary.md` and `context.md` if populated. Reference real metric definitions where known; otherwise log as assumptions.
 
 PROCESS:
 1. Read journeys (stages + drop-offs) and states (reachable states).
