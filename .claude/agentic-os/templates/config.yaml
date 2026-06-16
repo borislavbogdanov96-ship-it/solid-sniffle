@@ -1,0 +1,31 @@
+# Project config — copy to <project>/.claude/config.yaml and fill in.
+# Static metadata for one initiative. Read at session start so the model
+# knows the channels, people, and vendors for THIS project without asking.
+
+project:
+  name:            # short kebab-case slug, e.g. nexo-card-limit-increase
+  jira_epic:       # e.g. CARD-3552
+  status:          # discovery | design | build | launch | done
+  owner: Borislav Bogdanov
+
+slack_channels:    # channels where this project is discussed
+  - name:          # e.g. #nexo-card-product
+    purpose:       # what it's used for
+
+stakeholders:      # decision-makers and reviewers for this project
+  - name:
+    role:
+    cares_about:   # what they'll react to (for managing-up)
+
+vendors:           # external partners involved (issuers, processors, enrichment)
+  - name:          # e.g. DiPocket / Zenus / Snowdrop
+    mechanism:     # 1-line: how they fit (link to vendor deep-dive if it exists)
+
+teams:             # internal eng/design/data teams involved
+  - name:
+    contact:
+
+links:             # canonical references
+  knowledge_center:
+  confluence:
+  prototype:
