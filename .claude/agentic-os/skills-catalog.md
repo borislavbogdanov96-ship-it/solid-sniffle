@@ -12,6 +12,13 @@ Index of all active skills. Updated when new skills are built or existing ones c
 - **Reads Knowledge Center:** No
 - **Hands off to:** — (returns the `/exec` link). Mandatory masking/sharing pre-check before any deploy
 
+### skill-creator
+- **Trigger:** "create a skill", "build a skill", "make a skill for X", "improve this skill", "run evals on my skill", "optimize skill description"
+- **Loads from business-brain:** No
+- **Reads Knowledge Center:** No
+- **Hands off to:** subagents (grader, comparator, analyzer) for eval runs; returns packaged `.skill` file
+- **Source:** `anthropics/claude-plugins-official` — installed 2026-06-17
+
 ### wrap-up
 - **Trigger:** Auto-detected session end (confirmed by user)
 - **Loads from business-brain:** All files
