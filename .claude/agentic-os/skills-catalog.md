@@ -6,6 +6,14 @@ Index of all active skills. Updated when new skills are built or existing ones c
 
 ## Local Skills (.claude/skills/)
 
+### google-drive-project
+- **Trigger:** Project session start (if no Drive link in config.yaml), "sync to drive", "init drive", "set up drive", session wrap-up, mid-session after first artifact produced
+- **Loads from business-brain:** No
+- **Reads Knowledge Center:** No
+- **Hands off to:** — (manages Drive MCP calls directly, writes back to `.claude/config.yaml`)
+- **MCP dependency:** `mcp__57cbe160-23c8-477f-9820-46c5e8b592cc__*` (Google Drive)
+- **Built:** 2026-06-17
+
 ### google-apps-script-deploy
 - **Trigger:** 'ship this', 'deploy', 'make a shareable link', 'publish the dashboard', 'host this HTML'
 - **Loads from business-brain:** No
