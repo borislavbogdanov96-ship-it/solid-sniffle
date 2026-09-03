@@ -1,22 +1,35 @@
 # Session Brief — solid-sniffle
 
-**Date:** 2026-06-16
-**Status:** Agentic OS adoption merged to `main`. Awaiting a fresh-session test before considering it fully verified.
+**Date:** 2026-09-03
+**Status:** Budget & Expenses tracker implemented and pushed to
+`claude/new-session-92z1p5`. Awaiting live verification against the real
+Firebase room.
 
 ## Context
-`solid-sniffle` is Borislav's personal config repo carrying a repo-scoped "Agentic OS" — global `CLAUDE.md` context, business-brain placeholders, pattern library, session-continuity harness, model-routing subagents, the design-craft + PM pipeline command chains, and design/UX skill packs. It's meant to work the same way in Claude Code on web/mobile (repo-scoped) as on desktop, since `~/.claude` doesn't carry over to cloud sessions.
+`solid-sniffle` is two things layered together: the product — a single-file
+wedding tracker (`index.html`, Tailwind CDN, Firebase Realtime DB, no build
+step) — and Borislav's repo-scoped Agentic OS config under `.claude/`.
 
 ## Last Session
-- Adopted/genericized the Agentic OS for personal use (stripped all Nexo Card work content from CLAUDE.md, business-brain files, patterns, skills catalog).
-- Installed the full PM pipeline (`optimize-prompt` → ... → `agent-pm-next`) and the design-craft chain, genericized.
-- Built `/agent-navigation-map` — on-demand `NAVIGATION.md` codebase-index generator — with auto-read wired into `CLAUDE.md` and auto-refresh (never auto-create) wired into `wrap-up` Step 4d.
-- Opened PR #2 (`claude/agentic-os-adoption-yn9t5u` → `main`), hit a merge conflict on `.claude/settings.json` (main had independently added a `designparser` MCP server), resolved by combining both configs with explicit user sign-off, merged successfully (`b9afea6`).
-- Gave the user a test prompt to validate the setup in a brand-new session.
+- Built the whole Budget spec as a fourth view in `index.html`: dashboard,
+  categories with planned amounts, expenses with fixed/per-unit pricing,
+  multi-payment tracking, overspend colour bands, dark mode, mobile layout.
+- Adapted the spec's assumed React + Firestore stack to the app's real
+  single-file vanilla + Realtime DB architecture — logged in `decisions.md`.
+- Wrote a headless-browser acceptance suite (in-memory Firebase mock, so the
+  couple's live DB was untouched): 17/17 passing, covering all 10 acceptance
+  criteria. The suite lives in the session scratchpad, not in the repo.
 
 ## Next Session
-- Run the test prompt in a fresh session off `main` (not the now-merged feature branch) to confirm: `CLAUDE.md` auto-loads, `agent-behavior.md` orientation fires, and `/agent-navigation-map` actually generates a working `NAVIGATION.md`.
-- If that test triggers a `wrap-up`, verify Step 4d behaves correctly (should report "Navigation map: refreshed" only if a `NAVIGATION.md` already exists and files outside `.claude/` changed).
-- Consider building the "pre-merge conflict pre-check" skill logged in `skill-backlog.md` (quick-win) — would have caught the `designparser` conflict before the merge API call failed.
+- Have Bobby open the Budget tab against the real room and confirm the seed
+  categories, layout and Tailwind styling look right — the sandbox proxy blocks
+  the Tailwind and Fonts CDNs, so visual rendering is the one thing not verified.
+- Decide whether the acceptance suite + Firebase mock should be committed to the
+  repo (it currently only exists in the scratchpad, which is discarded).
+- Open question from the spec: §5 asks for auth-restricted access for Bobby and
+  Nikol. The app has no auth today; the room id is the only secret. Nothing was
+  added — decide whether that matters before the budget holds real vendor data.
 
 ## Open Questions
-- None blocking — the only unresolved item is the fresh-session verification itself, which is the explicit next step.
+- Should `NAVIGATION.md` be regenerated? `index.html` grew by ~700 lines and now
+  has a fourth view its map doesn't mention.

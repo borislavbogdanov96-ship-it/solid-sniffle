@@ -1,0 +1,10 @@
+date	type	metric	value	status
+# Append-only. One row per session/milestone. Tab-separated. Never rewrite existing rows.
+# type:   the kind of work — analysis | spec | design | build | review | decision | launch
+# metric: what is being measured/tracked for this row (free text, e.g. "AC drafted", "users in segment")
+# value:  the figure or short result (e.g. "12", "v2 shipped", "n/a")
+# status: open | in-progress | done | blocked
+# Example:
+# 2026-06-16	build	prototypes shipped	3	done
+2026-09-03	build	acceptance checks passing	17/17	done
+2026-09-03	decision	stack adapted to single-file vanilla + RTDB	logged	done

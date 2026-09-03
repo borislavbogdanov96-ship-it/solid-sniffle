@@ -357,6 +357,61 @@
     }
     #dark-toggle:hover { background: var(--surface-raised); }
 
+    /* ── BUDGET ── */
+    .bar-track {
+      background: var(--surface-recessed); border-radius: 9999px;
+      height: 6px; overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%; border-radius: 9999px;
+      transition: width 0.7s var(--ease-out-expo);
+    }
+    .budget-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; cursor: pointer; width: 100%; text-align: left;
+      border: none; background: none;
+      transition: background 0.12s var(--ease-out-expo);
+    }
+    .budget-row:hover { background: var(--primary-subtle); }
+    .exp-row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 14px; border-radius: 12px;
+      background: var(--bg); border: 1px solid var(--border-subtle);
+      cursor: pointer; width: 100%; text-align: left;
+      transition: border-color 0.14s var(--ease-out-expo),
+                  background 0.12s var(--ease-out-expo);
+    }
+    .exp-row:hover { border-color: var(--primary-border); background: var(--primary-subtle); }
+    .seg {
+      display: flex; gap: 4px; padding: 4px; border-radius: 14px;
+      background: var(--surface-recessed);
+    }
+    .seg-btn {
+      flex: 1; min-height: 40px; border: none; background: none;
+      border-radius: 10px; cursor: pointer;
+      font-size: 13px; font-weight: 600; color: var(--ink-muted);
+      transition: background 0.14s var(--ease-out-expo), color 0.14s var(--ease-out-expo);
+    }
+    .seg-btn.active {
+      background: var(--surface-raised); color: var(--ink);
+      box-shadow: var(--shadow-sm);
+    }
+    .over-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 1px 7px; border-radius: 9999px;
+      font-size: 10px; font-weight: 700; white-space: nowrap;
+      background: rgba(239,68,68,0.12); color: #dc2626;
+    }
+    .num-input {
+      width: 100%; font-size: 15px; border-radius: 10px;
+      border: 1px solid var(--border); padding: 8px 10px;
+      background: var(--surface-raised); color: var(--ink);
+      outline: none;
+    }
+    .num-input:focus { box-shadow: 0 0 0 2px var(--primary-border); }
+    .chevron { transition: transform 0.18s var(--ease-out-expo); flex-shrink: 0; }
+    .chevron.open { transform: rotate(90deg); }
+
     /* ── DARK MODE ── */
     html.dark {
       color-scheme: dark;
@@ -421,6 +476,7 @@
     /* Inputs */
     html.dark input[type="text"],
     html.dark input[type="date"],
+    html.dark input[type="number"],
     html.dark select:not(#layout-select) {
       background-color: oklch(0.155 0.000 0) !important;
       border-color: oklch(0.292 0.000 0) !important;
@@ -484,6 +540,16 @@
     html.dark #dark-toggle:hover { background: oklch(0.268 0.000 0); }
     html.dark #layout-select     { background-color: oklch(0.218 0.000 0) !important; border-color: oklch(0.292 0.000 0) !important; color: oklch(0.600 0.006 68) !important; }
 
+    /* Budget */
+    html.dark .bar-track     { background: oklch(0.248 0.000 0) !important; }
+    html.dark .budget-row:hover { background: oklch(0.175 0.022 68) !important; }
+    html.dark .exp-row       { background: oklch(0.190 0.000 0) !important; border-color: oklch(0.260 0.000 0) !important; }
+    html.dark .exp-row:hover { background: oklch(0.175 0.022 68) !important; }
+    html.dark .seg           { background: oklch(0.155 0.000 0) !important; }
+    html.dark .seg-btn.active{ background: oklch(0.268 0.000 0) !important; color: oklch(0.938 0.003 68) !important; }
+    html.dark .over-badge    { background: rgba(239,68,68,0.16) !important; color: #f87171 !important; }
+    html.dark .num-input     { background: oklch(0.155 0.000 0) !important; border-color: oklch(0.292 0.000 0) !important; color: oklch(0.938 0.003 68) !important; }
+
     /* Countdown: warm gold in dark */
     html.dark .countdown-number { color: oklch(0.780 0.115 68) !important; }
 
@@ -523,9 +589,10 @@
             <button id="btn-overview" onclick="setView('overview')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Overview</button>
             <button id="btn-list"     onclick="setView('list')"     class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Tasks</button>
             <button id="btn-timeline" onclick="setView('timeline')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Timeline</button>
+            <button id="btn-budget"   onclick="setView('budget')"   class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Budget</button>
           </div>
           <!-- Desktop add -->
-          <button onclick="openAdd()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-full transition-all shadow-sm" style="background:var(--primary)" aria-label="Add task">
+          <button onclick="addForView()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-full transition-all shadow-sm" style="background:var(--primary)" aria-label="Add">
             <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
             Add
           </button>
@@ -590,6 +657,12 @@
         <div id="gantt-view" class="hidden md:block pb-4"></div>
       </div>
 
+      <!-- BUDGET SECTION -->
+      <div id="budget-section" class="hidden py-5 space-y-5">
+        <div id="budget-dashboard"></div>
+        <div id="budget-categories"></div>
+      </div>
+
     </div>
   </div>
 
@@ -614,11 +687,17 @@
       </svg>
       <span>Timeline</span>
     </button>
+    <button class="nav-tab" id="nav-budget" onclick="setView('budget')" role="tab" aria-selected="false" aria-label="Budget">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <span>Budget</span>
+    </button>
   </nav>
 
   <!-- FAB (mobile only) -->
-  <button class="fab md:hidden" id="fab-add" onclick="openAdd()"
-          aria-label="Add task"
+  <button class="fab md:hidden" id="fab-add" onclick="addForView()"
+          aria-label="Add"
           style="bottom:calc(72px + env(safe-area-inset-bottom,0px))">
     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
@@ -657,6 +736,53 @@
     </div>
   </div>
 
+  <!-- Expense Modal -->
+  <div id="expense-modal" class="modal-backdrop hidden" onclick="maybeClose('expense-modal',event)">
+    <div class="modal-panel bg-white w-full max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
+      <div class="p-5">
+        <div class="sheet-handle md:hidden"></div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-serif text-xl font-semibold text-slate-800" id="expense-modal-title">Add Expense</h2>
+          <button onclick="closeModal('expense-modal')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div id="expense-form-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div id="category-modal" class="modal-backdrop hidden" onclick="maybeClose('category-modal',event)">
+    <div class="modal-panel bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl md:shadow-2xl" onclick="event.stopPropagation()">
+      <div class="p-5">
+        <div class="sheet-handle md:hidden"></div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-serif text-xl font-semibold text-slate-800">New Category</h2>
+          <button onclick="closeModal('category-modal')" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center" aria-label="Close">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5" for="cat-name">Category name</label>
+            <input type="text" id="cat-name" autocomplete="off" placeholder="e.g. Honeymoon"
+              class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5" for="cat-planned">Planned amount (EUR)</label>
+            <input type="number" id="cat-planned" min="0" step="1" inputmode="decimal" placeholder="0"
+              class="w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300">
+          </div>
+          <div class="flex gap-3 pt-1">
+            <button onclick="closeModal('category-modal')" class="flex-1 text-sm font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors" style="min-height:48px">Cancel</button>
+            <button onclick="submitCategory()" class="flex-1 text-sm font-semibold text-white rounded-xl transition-all" style="min-height:48px;background:var(--primary)">Add category</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Reset Modal -->
   <div id="reset-modal" class="modal-backdrop hidden" onclick="maybeClose('reset-modal',event)">
     <div class="modal-panel bg-white w-full max-w-sm rounded-t-2xl md:rounded-2xl md:shadow-2xl p-6" onclick="event.stopPropagation()">
@@ -687,7 +813,11 @@ firebase.initializeApp({
   appId: "1:1045458509622:web:febb6eec887acb95991d97"
 });
 const db = firebase.database();
-const tasksRef = db.ref('rooms/f3a9b2d7c5414e8f9a6bd012e4f5c783/tasks');
+const ROOM = 'rooms/f3a9b2d7c5414e8f9a6bd012e4f5c783';
+const tasksRef      = db.ref(ROOM + '/tasks');
+const budgetCatsRef = db.ref(ROOM + '/budgetCategories');
+const expensesRef   = db.ref(ROOM + '/expenses');
+const settingsRef   = db.ref(ROOM + '/budgetSettings');
 
 // ─────────────────────────────────────────────────────────────
 // CONSTANTS
@@ -770,9 +900,51 @@ const DEFAULTS = [
 ];
 
 // ─────────────────────────────────────────────────────────────
+// BUDGET DEFAULTS
+// ─────────────────────────────────────────────────────────────
+const BUDGET_DEFAULTS = {
+  totalBudget: 25000,
+  currency: 'EUR',
+  alertThreshold: 100,
+  guestCount: 51,
+};
+
+const DEFAULT_BUDGET_CATS = [
+  'Venue',
+  'Catering',
+  'Photographer/Videographer',
+  'Decoration',
+  'Music/DJ',
+  'Attire & Beauty',
+  'Invitations & Guests',
+  'Other',
+];
+
+// Categories that price per guest by default
+const PER_UNIT_CATS = ['Catering', 'Invitations & Guests'];
+
+const BUDGET_COLORS = [
+  '#D4AF37','#059669','#6366F1','#DB2777',
+  '#7C3AED','#EA580C','#2563EB','#0891B2',
+];
+
+const EXPENSE_STATUS = {
+  paid:        { label: 'Paid in full', cls: 'bg-emerald-100 text-emerald-700' },
+  deposit_paid:{ label: 'Deposit paid', cls: 'bg-amber-100 text-amber-700' },
+  pending:     { label: 'Pending',      cls: 'bg-slate-100 text-slate-500' },
+};
+
+// ─────────────────────────────────────────────────────────────
 // STATE
 // ─────────────────────────────────────────────────────────────
 let tasks = {};
+let budgetCats = {};
+let expenses = {};
+let budgetSettings = { ...BUDGET_DEFAULTS };
+let expandedCats = new Set();
+let editExpenseId = null;
+let expForm = { mode: 'fixed', payments: [], statusTouched: false };
+let budgetSeeded = false;
 let curView = 'overview';
 let curFilter = 'all';
 let readyOnly = false;
@@ -993,7 +1165,7 @@ function renderFilters() {
 // VIEW BUTTONS
 // ─────────────────────────────────────────────────────────────
 function renderViewBtns() {
-  ['overview','list','timeline'].forEach(v => {
+  ['overview','list','timeline','budget'].forEach(v => {
     const btn = document.getElementById('btn-'+v);
     if (btn) btn.className = curView===v
       ? 'px-3 py-1.5 text-xs font-semibold rounded-lg bg-white shadow text-slate-800 transition-all'
@@ -1312,10 +1484,616 @@ function showTip(e, id) {
 function hideTip() { document.getElementById('g-tip').classList.add('hidden'); }
 
 // ─────────────────────────────────────────────────────────────
+// BUDGET — HELPERS
+// ─────────────────────────────────────────────────────────────
+function byId(id) { return document.getElementById(id); }
+
+function num(v) { const n = parseFloat(v); return isFinite(n) ? n : 0; }
+
+function fmtEur(v) {
+  const n = num(v);
+  const dec = Math.abs(n % 1) > 0.005 ? 2 : 0;
+  return n.toLocaleString('en-GB', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + ' EUR';
+}
+
+function normPayments(raw) {
+  if (!raw) return [];
+  const arr = Array.isArray(raw) ? raw : Object.values(raw);
+  return arr.filter(Boolean).map(p => ({ amount: num(p.amount), date: p.date || '', note: p.note || '' }));
+}
+
+// Single source of truth for an expense total (spec §5) — used by the
+// form preview and every aggregate, so the two can never diverge.
+function expenseTotal(e) {
+  if (!e) return 0;
+  if (e.pricingMode === 'per_unit') return num(e.quantity) * num(e.unitPrice);
+  return num(e.fixedAmount);
+}
+function expensePaid(e) {
+  return normPayments(e && e.paymentEntries).reduce((s, p) => s + p.amount, 0);
+}
+function deriveStatus(total, paid) {
+  if (paid > 0 && paid >= total - 0.005) return 'paid';
+  if (paid > 0) return 'deposit_paid';
+  return 'pending';
+}
+
+function sortedCats() {
+  return Object.values(budgetCats)
+    .sort((a, b) => (num(a.order) - num(b.order)) || String(a.name).localeCompare(String(b.name)));
+}
+function catColor(c) { return BUDGET_COLORS[num(c.order) % BUDGET_COLORS.length]; }
+
+function expensesOf(catId) {
+  return Object.values(expenses)
+    .filter(e => e.categoryId === catId)
+    .sort((a, b) => num(a.createdAt) - num(b.createdAt));
+}
+function catTotals(catId) {
+  let spent = 0, paid = 0;
+  expensesOf(catId).forEach(e => { spent += expenseTotal(e); paid += expensePaid(e); });
+  return { spent, paid };
+}
+function budgetTotals() {
+  let planned = 0, spent = 0, paid = 0;
+  Object.values(budgetCats).forEach(c => { planned += num(c.plannedAmount); });
+  Object.values(expenses).forEach(e => { spent += expenseTotal(e); paid += expensePaid(e); });
+  return { planned, spent, paid };
+}
+function pctOf(v, base) {
+  if (!base) return v > 0 ? 100 : 0;
+  return (v / base) * 100;
+}
+function barColor(pct) {
+  const t = num(budgetSettings.alertThreshold) || 100;
+  if (pct >= t)        return '#ef4444';
+  if (pct >= t * 0.75) return '#f59e0b';
+  return '#10b981';
+}
+function isOver(c) {
+  const planned = num(c.plannedAmount);
+  return planned > 0 && catTotals(c.id).spent > planned;
+}
+function unitLine(e) {
+  if (e.pricingMode !== 'per_unit') return '';
+  const q = num(e.quantity), u = num(e.unitPrice);
+  const lbl = e.unitLabel ? ' ' + esc(e.unitLabel) + (q === 1 ? '' : 's') : '';
+  return `${q}${lbl} × ${fmtEur(u)} = ${fmtEur(q * u)}`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET — DASHBOARD
+// ─────────────────────────────────────────────────────────────
+function renderBudgetDashboard() {
+  const el = byId('budget-dashboard'); if (!el) return;
+  const { planned, spent, paid } = budgetTotals();
+  const budget    = num(budgetSettings.totalBudget);
+  const remaining = budget - spent;
+  const pct       = pctOf(spent, budget);
+  const col       = barColor(pct);
+  const days      = Math.ceil((WEDDING - today0()) / 86400000);
+  const over      = sortedCats().filter(isOver);
+
+  const tile = (label, value, cls) => `
+    <div class="bg-white border border-slate-100 rounded-2xl p-4 text-center" style="box-shadow:var(--shadow-sm)">
+      <div class="font-serif text-2xl font-bold ${cls || 'text-slate-800'}">${fmtEur(value)}</div>
+      <div class="text-xs text-slate-500 mt-1">${label}</div>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="bg-white rounded-2xl border border-slate-100 p-5 space-y-4" style="box-shadow:var(--shadow-card)">
+      <div class="flex items-end justify-between gap-4 flex-wrap">
+        <div>
+          <p class="text-xs font-semibold text-slate-400 tracking-[0.14em] uppercase" style="font-family:'Cormorant Garamond',serif">Total budget</p>
+          <div class="flex items-center gap-2 mt-1">
+            <input type="number" id="total-budget-input" min="0" step="100" inputmode="decimal"
+              class="num-input font-serif font-bold" style="width:150px;font-size:26px"
+              value="${budget}" onchange="setTotalBudget(this.value)" aria-label="Total budget in EUR">
+            <span class="text-sm font-semibold text-slate-400">EUR</span>
+          </div>
+        </div>
+        <div class="text-right">
+          <p class="text-sm text-slate-500">${days} days to the wedding</p>
+          <p class="text-xs text-slate-400 mt-0.5">${Math.round(pct)}% of budget committed</p>
+        </div>
+      </div>
+
+      <div class="bar-track" style="height:10px">
+        <div class="bar-fill" style="width:${Math.min(100, Math.max(0, pct))}%;background:${col}"></div>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        ${tile('Planned', planned)}
+        ${tile('Spent', spent)}
+        ${tile('Paid', paid, 'text-emerald-500')}
+        ${tile('Remaining', remaining, remaining < 0 ? 'text-red-500' : 'text-slate-800')}
+      </div>
+
+      ${over.length ? `<div class="flex items-center gap-2 flex-wrap pt-1">
+        <span class="text-xs font-semibold text-slate-500">Over budget:</span>
+        ${over.map(c => `<span class="over-badge">${esc(c.name)}</span>`).join('')}
+      </div>` : ''}
+
+      <div class="flex items-center justify-between gap-3 pt-1 border-t border-slate-100">
+        <label class="text-xs text-slate-500 flex items-center gap-2 pt-3" for="guest-count-input">
+          Guest count
+          <input type="number" id="guest-count-input" min="0" step="1" inputmode="numeric"
+            class="num-input" style="width:76px;font-size:13px;padding:5px 8px"
+            value="${num(budgetSettings.guestCount)}" onchange="setGuestCount(this.value)">
+        </label>
+        <button onclick="openAddExpense()" class="flex items-center gap-1.5 px-3 py-2 text-white text-xs font-bold rounded-full transition-all mt-3" style="background:var(--primary)">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+          Add expense
+        </button>
+      </div>
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET — CATEGORY LIST
+// ─────────────────────────────────────────────────────────────
+function expenseRowHtml(e) {
+  const total = expenseTotal(e);
+  const paid  = expensePaid(e);
+  const st    = EXPENSE_STATUS[e.status] || EXPENSE_STATUS.pending;
+  const title = [e.vendorName, e.description].filter(Boolean).join(' — ') || 'Untitled expense';
+  const meta  = [unitLine(e), e.dueDate ? 'due ' + fmtDate(e.dueDate) : ''].filter(Boolean).join(' · ');
+  return `
+    <div class="exp-row" role="button" tabindex="0" onclick="openEditExpense('${e.id}')"
+         onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openEditExpense('${e.id}')}">
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-slate-800 truncate">${esc(title)}</p>
+        ${meta ? `<p class="text-xs text-slate-400 mt-0.5 truncate">${meta}</p>` : ''}
+      </div>
+      <div class="text-right flex-shrink-0">
+        <p class="text-sm font-bold text-slate-800">${fmtEur(total)}</p>
+        <p class="text-xs text-slate-400 mt-0.5">paid ${fmtEur(paid)}</p>
+        <span class="badge ${st.cls} mt-1">${st.label}</span>
+      </div>
+    </div>`;
+}
+
+function catRowHtml(c) {
+  const { spent, paid } = catTotals(c.id);
+  const planned  = num(c.plannedAmount);
+  const toPay    = spent - paid;
+  // With nothing planned there is no overspend to signal — keep the bar neutral.
+  const pct      = planned > 0 ? pctOf(spent, planned) : 0;
+  const col      = planned > 0 ? barColor(pct) : 'var(--border)';
+  const open     = expandedCats.has(c.id);
+  const list     = expensesOf(c.id);
+
+  return `
+    <div>
+      <div class="budget-row" role="button" tabindex="0" onclick="toggleCat('${c.id}')"
+           onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCat('${c.id}')}">
+        <svg class="chevron w-4 h-4 text-slate-400 ${open ? 'open' : ''}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="cat-dot" style="background:${catColor(c)}"></span>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2">
+            <p class="text-sm font-semibold text-slate-800 truncate">${esc(c.name)}</p>
+            ${isOver(c) ? `<span class="over-badge">over</span>` : ''}
+          </div>
+          <p class="text-xs text-slate-400 mt-0.5">
+            Spent ${fmtEur(spent)} · Paid ${fmtEur(paid)} · To pay ${fmtEur(toPay)}
+          </p>
+          <div class="bar-track mt-2" style="max-width:260px">
+            <div class="bar-fill" style="width:${Math.min(100, Math.max(0, pct))}%;background:${col}"></div>
+          </div>
+        </div>
+        <div class="flex-shrink-0 text-right" onclick="event.stopPropagation()">
+          <label class="block text-[10px] font-bold text-slate-400 mb-1" for="planned-${c.id}">PLANNED</label>
+          <input type="number" id="planned-${c.id}" min="0" step="50" inputmode="decimal" value="${planned}"
+            class="num-input text-right" style="width:104px;font-size:13px;padding:6px 8px"
+            onchange="setCatPlanned('${c.id}', this.value)" aria-label="Planned amount for ${esc(c.name)}">
+        </div>
+      </div>
+      ${open ? `<div class="px-4 pb-4 space-y-2">
+        ${list.length ? list.map(expenseRowHtml).join('') : `<p class="text-sm text-slate-400 py-2">No expenses yet.</p>`}
+        <div class="flex gap-2 pt-1">
+          <button onclick="openAddExpense('${c.id}')" class="pill" style="min-height:40px">
+            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+            Add expense
+          </button>
+          <button onclick="deleteCategory('${c.id}')" class="pill" style="min-height:40px" aria-label="Delete category ${esc(c.name)}">Delete category</button>
+        </div>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderBudgetCategories() {
+  const el = byId('budget-categories'); if (!el) return;
+  const cats = sortedCats();
+  el.innerHTML = `
+    <div class="bg-white border border-slate-100 rounded-2xl overflow-hidden" style="box-shadow:var(--shadow-card)">
+      <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-2" style="background:var(--primary-subtle)">
+        <span class="text-sm font-bold" style="color:var(--ink)">Categories</span>
+        <button onclick="openAddCategory()" class="text-xs font-bold ml-auto" style="color:var(--primary)">+ New category</button>
+      </div>
+      <div class="divide-y divide-slate-100">
+        ${cats.length ? cats.map(catRowHtml).join('') : `<p class="text-sm text-slate-400 px-4 py-5">No categories yet.</p>`}
+      </div>
+    </div>`;
+}
+
+function renderBudget() {
+  renderBudgetDashboard();
+  renderBudgetCategories();
+}
+
+function toggleCat(id) {
+  if (expandedCats.has(id)) expandedCats.delete(id); else expandedCats.add(id);
+  renderBudgetCategories();
+}
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET — SETTINGS
+// ─────────────────────────────────────────────────────────────
+function setTotalBudget(v) {
+  setSyncBadge('saving');
+  settingsRef.update({ totalBudget: num(v) });
+}
+function setGuestCount(v) {
+  setSyncBadge('saving');
+  settingsRef.update({ guestCount: num(v) });
+}
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET — CATEGORY CRUD
+// ─────────────────────────────────────────────────────────────
+function openAddCategory() {
+  byId('cat-name').value = '';
+  byId('cat-planned').value = '';
+  byId('category-modal').classList.remove('hidden');
+  byId('cat-name').focus();
+}
+
+function submitCategory() {
+  const name = byId('cat-name').value.trim();
+  if (!name) { alert('Category name is required.'); return; }
+  const orders = Object.values(budgetCats).map(c => num(c.order));
+  const ref = budgetCatsRef.push();
+  const rec = {
+    id: ref.key,
+    name,
+    plannedAmount: num(byId('cat-planned').value),
+    order: orders.length ? Math.max(...orders) + 1 : 0,
+    isCustom: true,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+  setSyncBadge('saving');
+  ref.set(rec);
+  budgetCats[ref.key] = rec;
+  closeModal('category-modal');
+
+  // If the expense form is open, select the category that was just created.
+  const sel = byId('exp-cat');
+  if (sel && !byId('expense-modal').classList.contains('hidden')) {
+    const opt = document.createElement('option');
+    opt.value = ref.key;
+    opt.textContent = name;
+    sel.appendChild(opt);
+    sel.value = ref.key;
+    onExpCategoryChange();
+  }
+}
+
+function setCatPlanned(id, v) {
+  setSyncBadge('saving');
+  budgetCatsRef.child(id).update({ plannedAmount: num(v), updatedAt: Date.now() });
+}
+
+function deleteCategory(id) {
+  const cat = budgetCats[id]; if (!cat) return;
+  const list = expensesOf(id);
+  if (list.length) {
+    const other = sortedCats().find(c => c.name === 'Other' && c.id !== id);
+    if (!other) {
+      alert(`"${cat.name}" still has ${list.length} expense(s) and there is no "Other" category to move them to. Delete or move them first.`);
+      return;
+    }
+    if (!confirm(`"${cat.name}" has ${list.length} expense(s).\nMove them to "Other" and delete the category?`)) return;
+    const updates = {};
+    list.forEach(e => { updates[e.id + '/categoryId'] = other.id; });
+    setSyncBadge('saving');
+    expensesRef.update(updates).then(() => budgetCatsRef.child(id).remove());
+  } else {
+    if (!confirm(`Delete category "${cat.name}"?`)) return;
+    setSyncBadge('saving');
+    budgetCatsRef.child(id).remove();
+  }
+  expandedCats.delete(id);
+}
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET — EXPENSE FORM
+// ─────────────────────────────────────────────────────────────
+function expenseFormHtml(e, isEdit) {
+  const cats = sortedCats();
+  const perUnit = e.pricingMode === 'per_unit';
+  const inputCls = 'w-full text-base border border-slate-200 rounded-xl px-3 py-3 focus:outline-none focus:ring-2 focus:ring-emerald-300';
+
+  return `
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-cat">Category</label>
+        <div class="flex gap-2">
+          <select id="exp-cat" class="${inputCls}" onchange="onExpCategoryChange()">
+            ${cats.map(c => `<option value="${c.id}" ${c.id === e.categoryId ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}
+          </select>
+          <button onclick="openAddCategory()" class="pill flex-shrink-0" style="min-height:48px" aria-label="New category">+ New</button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-vendor">Vendor</label>
+          <input type="text" id="exp-vendor" value="${esc(e.vendorName || '')}" autocomplete="off" placeholder="e.g. Bedouin Forest Residence" class="${inputCls}">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-desc">Description</label>
+          <input type="text" id="exp-desc" value="${esc(e.description || '')}" autocomplete="off" placeholder="e.g. Dinner package" class="${inputCls}">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5">Pricing</label>
+        <div class="seg">
+          <button type="button" id="seg-fixed" class="seg-btn ${perUnit ? '' : 'active'}" onclick="setPricingMode('fixed')">Fixed amount</button>
+          <button type="button" id="seg-unit"  class="seg-btn ${perUnit ? 'active' : ''}" onclick="setPricingMode('per_unit')">Per unit</button>
+        </div>
+
+        <div id="block-fixed" class="mt-3 ${perUnit ? 'hidden' : ''}">
+          <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-fixed">Amount (EUR)</label>
+          <input type="number" id="exp-fixed" min="0" step="0.01" inputmode="decimal" placeholder="0"
+            value="${e.fixedAmount == null ? '' : e.fixedAmount}" class="${inputCls}" oninput="updateExpPreview()">
+        </div>
+
+        <div id="block-unit" class="mt-3 space-y-3 ${perUnit ? '' : 'hidden'}">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-qty">Quantity</label>
+              <input type="number" id="exp-qty" min="0" step="1" inputmode="decimal" placeholder="0"
+                value="${e.quantity == null ? '' : e.quantity}" class="${inputCls}" oninput="updateExpPreview()">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-unit">Unit price (EUR)</label>
+              <input type="number" id="exp-unit" min="0" step="0.01" inputmode="decimal" placeholder="0"
+                value="${e.unitPrice == null ? '' : e.unitPrice}" class="${inputCls}" oninput="updateExpPreview()">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-unitlabel">Unit label <span class="font-normal text-slate-400">(optional)</span></label>
+            <input type="text" id="exp-unitlabel" value="${esc(e.unitLabel || '')}" autocomplete="off" placeholder="guest, table, hour…" class="${inputCls}" oninput="updateExpPreview()">
+          </div>
+        </div>
+
+        <p id="exp-preview" class="text-sm font-semibold mt-3" style="color:var(--primary)"></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-status">Status</label>
+        <select id="exp-status" class="${inputCls}" onchange="expForm.statusTouched = true">
+          ${Object.entries(EXPENSE_STATUS).map(([k, v]) => `<option value="${k}" ${e.status === k ? 'selected' : ''}>${v.label}</option>`).join('')}
+        </select>
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-1.5">
+          <label class="text-xs font-bold text-slate-600">Payments</label>
+          <button onclick="addPayment()" class="text-xs font-bold" style="color:var(--primary)">+ Add payment</button>
+        </div>
+        <div id="exp-payments" class="space-y-3"></div>
+        <p id="exp-paid-summary" class="text-xs text-slate-400 mt-2"></p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-due">Payment due date <span class="font-normal text-slate-400">(optional)</span></label>
+        <input type="date" id="exp-due" value="${e.dueDate || ''}" class="${inputCls}">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-slate-600 mb-1.5" for="exp-notes">Notes</label>
+        <input type="text" id="exp-notes" value="${esc(e.notes || '')}" autocomplete="off" placeholder="Optional…" class="${inputCls}">
+      </div>
+
+      <div class="flex gap-3 pt-1 pb-2">
+        ${isEdit ? `<button onclick="deleteExpense()" class="px-4 text-sm font-semibold text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-colors flex items-center" style="min-height:48px">Delete</button>` : ''}
+        <button onclick="closeModal('expense-modal')" class="flex-1 text-sm font-semibold text-slate-700 bg-slate-100 rounded-xl hover:bg-slate-200 transition-colors" style="min-height:48px">Cancel</button>
+        <button onclick="submitExpense()" class="flex-1 text-sm font-semibold text-white rounded-xl transition-all" style="min-height:48px;background:var(--primary)">${isEdit ? 'Save' : 'Add expense'}</button>
+      </div>
+    </div>`;
+}
+
+function renderPaymentRows() {
+  const wrap = byId('exp-payments'); if (!wrap) return;
+  if (!expForm.payments.length) {
+    wrap.innerHTML = `<p class="text-sm text-slate-400">No payments recorded yet.</p>`;
+    return;
+  }
+  wrap.innerHTML = expForm.payments.map((p, i) => `
+    <div class="pay-row border border-slate-200 rounded-xl p-2 space-y-2">
+      <div style="display:grid;grid-template-columns:1fr 1fr 44px;gap:8px;align-items:center">
+        <input type="number" class="pay-amt num-input" min="0" step="0.01" inputmode="decimal" placeholder="Amount"
+          value="${p.amount || ''}" oninput="onPaymentsChanged()" aria-label="Payment amount">
+        <input type="date" class="pay-date num-input" value="${p.date || ''}" oninput="onPaymentsChanged()" aria-label="Payment date">
+        <button onclick="removePayment(${i})" class="text-slate-400 hover:text-red-500 rounded-lg flex items-center justify-center" style="min-height:40px" aria-label="Remove payment">
+          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+      <input type="text" class="pay-note num-input" value="${esc(p.note || '')}" placeholder="Note — deposit, final payment…" oninput="onPaymentsChanged()" aria-label="Payment note">
+    </div>`).join('');
+}
+
+function readPayments() {
+  const rows = [...document.querySelectorAll('#exp-payments .pay-row')];
+  if (!rows.length) return;
+  expForm.payments = rows.map(r => ({
+    amount: num(r.querySelector('.pay-amt').value),
+    date:   r.querySelector('.pay-date').value,
+    note:   r.querySelector('.pay-note').value.trim(),
+  }));
+}
+
+function readFormTotal() {
+  if (expForm.mode === 'per_unit') return num(byId('exp-qty').value) * num(byId('exp-unit').value);
+  return num(byId('exp-fixed').value);
+}
+
+function onPaymentsChanged() { readPayments(); updateExpPreview(); }
+
+function updateExpPreview() {
+  const total = readFormTotal();
+  const prev  = byId('exp-preview');
+  if (prev) {
+    if (expForm.mode === 'per_unit') {
+      const q = num(byId('exp-qty').value), u = num(byId('exp-unit').value);
+      const lbl = byId('exp-unitlabel').value.trim();
+      prev.textContent = `${q}${lbl ? ' ' + lbl + (q === 1 ? '' : 's') : ''} × ${fmtEur(u)} = ${fmtEur(total)}`;
+    } else {
+      prev.textContent = `Total ${fmtEur(total)}`;
+    }
+  }
+  const paid = expForm.payments.reduce((s, p) => s + num(p.amount), 0);
+  const sum  = byId('exp-paid-summary');
+  if (sum) sum.textContent = `Paid ${fmtEur(paid)} of ${fmtEur(total)} · ${fmtEur(Math.max(0, total - paid))} left to pay`;
+  const st = byId('exp-status');
+  if (st && !expForm.statusTouched) st.value = deriveStatus(total, paid);
+}
+
+function setPricingMode(mode) {
+  expForm.mode = mode;
+  byId('seg-fixed').classList.toggle('active', mode === 'fixed');
+  byId('seg-unit').classList.toggle('active', mode === 'per_unit');
+  byId('block-fixed').classList.toggle('hidden', mode !== 'fixed');
+  byId('block-unit').classList.toggle('hidden', mode !== 'per_unit');
+  updateExpPreview();
+}
+
+function onExpCategoryChange() {
+  const cat = budgetCats[byId('exp-cat').value];
+  if (!cat || editExpenseId) return;
+  if (PER_UNIT_CATS.includes(cat.name)) {
+    setPricingMode('per_unit');
+    if (!byId('exp-qty').value) byId('exp-qty').value = num(budgetSettings.guestCount) || '';
+    if (!byId('exp-unitlabel').value) byId('exp-unitlabel').value = 'guest';
+    updateExpPreview();
+  }
+}
+
+function addPayment() {
+  readPayments();
+  const already = expForm.payments.reduce((s, p) => s + num(p.amount), 0);
+  const left = Math.max(0, readFormTotal() - already);
+  expForm.payments.push({ amount: left || '', date: new Date().toISOString().slice(0, 10), note: '' });
+  renderPaymentRows();
+  updateExpPreview();
+}
+
+function removePayment(i) {
+  readPayments();
+  expForm.payments.splice(i, 1);
+  renderPaymentRows();
+  updateExpPreview();
+}
+
+function openAddExpense(catId) {
+  const cats = sortedCats();
+  if (!cats.length) { alert('Add a category first.'); return; }
+  editExpenseId = null;
+  const cid  = catId && budgetCats[catId] ? catId : cats[0].id;
+  const cat  = budgetCats[cid];
+  const per  = PER_UNIT_CATS.includes(cat.name);
+  const blank = {
+    categoryId: cid, vendorName: '', description: '',
+    pricingMode: per ? 'per_unit' : 'fixed',
+    fixedAmount: null,
+    quantity: per ? num(budgetSettings.guestCount) : null,
+    unitPrice: null,
+    unitLabel: per ? 'guest' : '',
+    status: 'pending', paymentEntries: [], dueDate: '', notes: '',
+  };
+  expForm = { mode: blank.pricingMode, payments: [], statusTouched: false };
+  byId('expense-modal-title').textContent = 'Add Expense';
+  byId('expense-form-body').innerHTML = expenseFormHtml(blank, false);
+  byId('expense-modal').classList.remove('hidden');
+  renderPaymentRows();
+  updateExpPreview();
+}
+
+function openEditExpense(id) {
+  const e = expenses[id]; if (!e) return;
+  editExpenseId = id;
+  expForm = { mode: e.pricingMode === 'per_unit' ? 'per_unit' : 'fixed', payments: normPayments(e.paymentEntries), statusTouched: true };
+  byId('expense-modal-title').textContent = 'Edit Expense';
+  byId('expense-form-body').innerHTML = expenseFormHtml(e, true);
+  byId('expense-modal').classList.remove('hidden');
+  renderPaymentRows();
+  updateExpPreview();
+}
+
+function submitExpense() {
+  readPayments();
+  const vendorName  = byId('exp-vendor').value.trim();
+  const description = byId('exp-desc').value.trim();
+  if (!vendorName && !description) { alert('Add a vendor or a description.'); return; }
+
+  const fixedRaw = byId('exp-fixed').value;
+  const qtyRaw   = byId('exp-qty').value;
+  const unitRaw  = byId('exp-unit').value;
+  const label    = byId('exp-unitlabel').value.trim();
+
+  const rec = {
+    categoryId:  byId('exp-cat').value,
+    vendorName, description,
+    pricingMode: expForm.mode,
+    // Both value sets are kept so switching modes never loses input (spec §2)
+    fixedAmount: fixedRaw === '' ? null : num(fixedRaw),
+    quantity:    qtyRaw   === '' ? null : num(qtyRaw),
+    unitPrice:   unitRaw  === '' ? null : num(unitRaw),
+    unitLabel:   label || null,
+    status:      byId('exp-status').value,
+    paymentEntries: expForm.payments.filter(p => p.amount || p.date || p.note),
+    dueDate:     byId('exp-due').value || null,
+    notes:       byId('exp-notes').value.trim(),
+    updatedAt:   Date.now(),
+  };
+  rec.totalAmount = expenseTotal(rec);
+  rec.paidAmount  = expensePaid(rec);
+
+  setSyncBadge('saving');
+  if (editExpenseId) {
+    const prev = expenses[editExpenseId] || {};
+    expensesRef.child(editExpenseId).set({ ...rec, id: editExpenseId, createdAt: prev.createdAt || Date.now() });
+  } else {
+    const ref = expensesRef.push();
+    ref.set({ ...rec, id: ref.key, createdAt: Date.now() });
+    expandedCats.add(rec.categoryId);
+  }
+  closeModal('expense-modal');
+  editExpenseId = null;
+}
+
+function deleteExpense() {
+  if (!editExpenseId) return;
+  if (!confirm('Delete this expense?')) return;
+  setSyncBadge('saving');
+  expensesRef.child(editExpenseId).remove();
+  closeModal('expense-modal');
+  editExpenseId = null;
+}
+
+function addForView() {
+  if (curView === 'budget') openAddExpense();
+  else openAdd();
+}
+
+// ─────────────────────────────────────────────────────────────
 // SECTION VISIBILITY
 // ─────────────────────────────────────────────────────────────
 function showSection(v) {
-  ['overview','list','timeline'].forEach(s => {
+  ['overview','list','timeline','budget'].forEach(s => {
     const el = document.getElementById(s+'-section');
     if (el) el.classList.toggle('hidden', s!==v);
   });
@@ -1336,6 +2114,9 @@ function render() {
     showSection('list');
     renderFilters();
     renderList();
+  } else if (curView === 'budget') {
+    showSection('budget');
+    renderBudget();
   } else {
     showSection('timeline');
     renderFilters();
@@ -1561,6 +2342,58 @@ tasksRef.on('value', snap => {
   document.getElementById('loading').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   render();
+});
+
+// ─────────────────────────────────────────────────────────────
+// BUDGET LISTENERS
+// ─────────────────────────────────────────────────────────────
+function budgetChanged() {
+  setSyncBadge('synced');
+  if (curView === 'budget') renderBudget();
+}
+
+budgetCatsRef.on('value', snap => {
+  const raw = snap.val();
+  if (!raw) {
+    budgetCats = {};
+    if (!budgetSeeded) {
+      budgetSeeded = true;
+      setSyncBadge('saving');
+      const data = {};
+      DEFAULT_BUDGET_CATS.forEach((name, i) => {
+        const key = budgetCatsRef.push().key;
+        data[key] = { id: key, name, plannedAmount: 0, order: i, isCustom: false, createdAt: Date.now(), updatedAt: Date.now() };
+      });
+      budgetCatsRef.set(data);
+      return;
+    }
+  } else {
+    budgetCats = {};
+    Object.entries(raw).forEach(([k, c]) => {
+      budgetCats[k] = { ...c, id: k, name: c.name || 'Untitled', plannedAmount: num(c.plannedAmount), order: num(c.order) };
+    });
+  }
+  budgetChanged();
+});
+
+expensesRef.on('value', snap => {
+  const raw = snap.val() || {};
+  expenses = {};
+  Object.entries(raw).forEach(([k, e]) => {
+    expenses[k] = { ...e, id: k, paymentEntries: normPayments(e.paymentEntries) };
+  });
+  budgetChanged();
+});
+
+settingsRef.on('value', snap => {
+  const raw = snap.val();
+  if (!raw) {
+    budgetSettings = { ...BUDGET_DEFAULTS };
+    settingsRef.set(BUDGET_DEFAULTS);
+    return;
+  }
+  budgetSettings = { ...BUDGET_DEFAULTS, ...raw };
+  budgetChanged();
 });
 
 db.ref('.info/connected').on('value', snap => {
