@@ -10,6 +10,13 @@ Firebase room.
 wedding tracker (`index.html`, Tailwind CDN, Firebase Realtime DB, no build
 step) — and Borislav's repo-scoped Agentic OS config under `.claude/`.
 
+## Latest
+Multiple budget builds now coexist: switch between them, duplicate one to try a
+different venue, mark one as the main plan (the only one tracking real
+payments), and compare them in a category-by-scenario table with a Spread
+column. Pre-scenario data migrates into a "Main plan" scenario on load.
+49/49 checks green (17 scenario, 17 acceptance, 15 regression).
+
 ## Last Session
 - Built the whole Budget spec as a fourth view in `index.html`: dashboard,
   categories with planned amounts, expenses with fixed/per-unit pricing,

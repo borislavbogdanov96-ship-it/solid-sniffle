@@ -14,6 +14,7 @@ per-unit pricing, multi-payment tracking, and overspend indicators.
 - [x] [main] Dashboard + category list rendering
 - [x] [main] Expense and category CRUD
 - [x] [main] Acceptance-criteria verification in a headless browser
+- [x] [main] Multiple budget builds: scenarios, duplication, main plan, comparison
 - [ ] [main] Live verification by Bobby against the real Firebase room
 
 ## Out of scope (per spec §6)

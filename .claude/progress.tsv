@@ -8,3 +8,5 @@ date	type	metric	value	status
 # 2026-06-16	build	prototypes shipped	3	done
 2026-09-03	build	acceptance checks passing	17/17	done
 2026-09-03	decision	stack adapted to single-file vanilla + RTDB	logged	done
+2026-09-03	build	scenario checks passing	17/17	done
+2026-09-03	build	acceptance + regression after scenarios	32/32	done

@@ -1,5 +1,35 @@
 # Progress — solid-sniffle
 
+## 2026-09-03 — Multiple budgets with side-by-side comparison
+
+Extended the Budget tab so several budget builds can coexist and be compared.
+
+**Added**
+- `budgets` node; every category and expense now carries a `budgetId`.
+- Scenario bar: switch budgets, new / duplicate / rename / set-as-main / delete.
+- One scenario is the **main plan** (shared via `budgetSettings.mainBudgetId`)
+  and is the only one that tracks payments; others render as projections with
+  the payment and status fields hidden.
+- Duplicate copies categories and expenses, re-pointing each copied expense at
+  the copy's own categories; recorded payments are copied only on request.
+- Compare view: categories down the side, scenarios across, a Spread column
+  showing where the money actually differs, plus Total, vs-budget and
+  vs-cheapest footer rows. Scrolls horizontally on mobile.
+- Migration adopting pre-scenario budget data into a "Main plan" scenario.
+
+**Verified** — 17/17 scenario checks, 17/17 acceptance checks, 15/15 regression
+checks. The scenario suite covers isolation between budgets, duplication
+re-pointing, main-plan promotion, the delete guard, comparison arithmetic, and a
+simulated upgrade from the previous schema. All against the in-memory Firebase
+mock; the live database was never touched.
+
+**Fixed during testing** — creating a scenario rendered the bar with the previous
+budget still selected, because the view id was set after the writes that trigger
+the re-render.
+
+**Still unverified** — visual styling (the sandbox proxy blocks the Tailwind and
+Google Fonts CDNs).
+
 ## 2026-09-03 — Budget & Expenses tracker built
 
 Implemented the full Budget spec inside `index.html` as a fourth view alongside
