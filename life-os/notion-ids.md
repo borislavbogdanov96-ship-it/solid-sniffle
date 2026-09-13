@@ -1,0 +1,36 @@
+# Life OS — Notion object IDs (created 2026-09-13)
+
+Parent page: 3da05f50-50a5-8138-a08b-f12b3e60f1c4  https://app.notion.com/p/3da05f5050a58138a08bf12b3e60f1c4
+
+| Database | Database ID | Data source ID |
+|---|---|---|
+| Life areas | 3626abd8d8ec47278093825fca5313a6 | 42afbdb0-c834-47c9-8986-92641d92cdae |
+| Continents | df538d25d9dd455092a38e39edca8b78 | 3f23b212-1b73-420f-a39e-065920801391 |
+| Wallets | cd73d1a14cbf4c9fbd6cd49720c6f566 | 3a01b621-6407-405c-8105-ba15edecb9d4 |
+| Food storage | 767affd3b8f24a149b6cdc319391308a | bd084410-e10e-45f4-8269-1c8c752f0b7b |
+| Exercises | d80c068d66fe4a869b50dd1949c75c96 | fe2f136a-e237-45fd-a993-1485b60f71eb |
+| Books | 45c0262132d74b50840023413ca3a7a7 | 033f9011-52a4-4469-ae84-8d998d51d037 |
+| Watchlist | 55b3257311a3475081199b75a7fabe22 | 99bb732e-2f68-4893-90ce-5a19270ac3f8 |
+| Contacts | 0f97f789ad15465eaa2c4cb8ea9d2a5b | 802be390-3134-497f-8d7d-968d2ca378b1 |
+| Tools | cc4a765eb3a440baa2c100f891b4e1e7 | 496ab68b-c4d2-4518-915f-d90552e70b3b |
+| Habit days | 0556ff1a8d3841d8aa0b7991e8d9f9f3 | 199700dc-a32e-4417-93a7-aac82ab1257b |
+| Debts | 3df1c7d23780407288e1508d3f3ddec0 | 913dc5a2-0512-4222-b630-0c5945e36775 |
+| Assets | db375db4437642db8d5293a99f510c23 | ba6d2596-7b51-48f9-b315-4746042f3377 |
+| Budgets | 59a9fa5899214c1f830333c6a791b868 | ffc162ae-a442-45ba-9d20-dd0bc2182eb8 |
+| Goals | 75e0eb4c90c24146a35f438d81c93923 | fc194167-8c4d-46fa-abb1-8bb4a4c41a68 |
+| Projects | 525b5e136acd4e15a898f2e48bfd6754 | c1c27db3-c32b-43ea-b15d-951d35004e3d |
+| Spheres | a28fb127bd664a6cb38977078fda293d | 9e6011a2-02c0-4ff9-a102-149cbdec50ee |
+| Subscriptions | 86156d264acd41e3b14ce59eebfabc12 | d8534221-5558-4694-902b-1965124bba68 |
+| Transfers | 4e9e076ca16341e4bf64ee4f8ca0a235 | 019eeb2f-375b-408f-a283-c9fdbcdefaf7 |
+| Transactions | 5020e64895ef4a299d2cc5256cbcc475 | f30c54ab-96c0-4adc-b5c8-c571cfc7876e |
+| Trainings | 920c19c40bdf460caacb6bbf5aed0a5b | 7d8274ac-7498-47fb-880d-a2e1336af756 |
+| Trips | b10b2244bfb3432694dce7f694320535 | 230b712b-cef9-4b97-aca6-a2ae52e1ed67 |
+| Recipes | b6d665a799ba4a6c8879ecca0ce714d7 | 9453544a-8476-41ce-97c1-0afd752e58cd |
+| Tasks | abd6a2bf4b554ee38f0e36c3d6296ac3 | 0aab3a28-afc6-4378-90ea-c836f612f806 |
+| Topics | ed7a617b8f70460fa30ca3bdc5ceb855 | 4c524e87-11cc-4eb5-a579-b7a6fa0d24f1 |
+| Schedule | 43304afda3b745beb3b17620db54dd26 | 6dff4534-08b9-4dff-885d-5c86aa090cc8 |
+| Locations | 57ca59da8b2b479c98dd19130c9ed82d | ee871ba9-8d56-42d5-9044-dae676a4b521 |
+| Galleries | 211511089915462a9434f17d74eb5bcb | f84e2ab8-d9e2-41ef-8368-07688dd9518b |
+| Documents | a0cd8eacd3b94f99b183183aa1c50cbd | 43bb9169-84f1-4050-a3fe-b6a7bc897c17 |
+| Notes | a8d693cc490b407993e7bab985bb2f01 | 942c1af8-9c1f-43a1-88bf-21cd5933328d |
+| Papers | 554ccb573adc46c39207f910671d6007 | 5ff5ae5f-4f69-4058-82f6-5ad311a1875c |

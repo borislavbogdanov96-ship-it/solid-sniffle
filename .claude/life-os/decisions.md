@@ -29,3 +29,9 @@ Append-only, newest first.
 
 **Decision.** MCP create-view / update-view cover the Views API, so no `.env` token is created.
 **Why.** Fewer secrets, fewer moving parts. Supersedes the handoff's conditional plan to create a token.
+
+## 2026-09-13 — Recipes "Missing" is a rollup, not a formatted string
+
+**Decision.** `Missing` on Recipes = rollup (show original) of Food storage `Missing name`, which is the item name when Status = Not in stock, else empty. Displays as "Eggs" / "Salmon, Spinach".
+**Why.** The Notion API formula validator returned "Type error with formula" for every variant using `filter`/`map`/`current` or operating on a rollup of a formula (4 attempts). The UI editor accepts these, so the "Missing: Eggs" string formula is a 30-second manual step, listed in Phase 5.
+**Supersedes.** SCHEMA.md §19 formula.

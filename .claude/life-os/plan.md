@@ -9,8 +9,8 @@ rebuild assessment).
 
 ## Phases
 - [x] [main] Step 0 — Notion MCP capability audit (views: yes; buttons/templates: no; relative-date filters: no → formulas; Place type: unverified)
-- [ ] [main] Step 1 — Schema spec written, user go on the full property list
-- [ ] [main] Phase 1 — "Life OS" parent page + 30 databases (creation order in SCHEMA.md) + rollup post-pass + seed rows
+- [x] [main] Step 1 — Schema spec written, user go on the full property list
+- [x] [main] Phase 1 — "Life OS" parent page + 30 databases (creation order in SCHEMA.md) + rollup post-pass + seed rows
 - [ ] [main] Phase 2 — Views on every database (tabs, calendar, board by day, map, gallery spot-check)
 - [ ] [main] Phase 3 — 5 dashboard pages (Home/Life Planner, Second Brain, Finance, Travel, Life OS home)
 - [ ] [opus] Phase 4a — 6 widget HTML pages in `life-os/widgets/`

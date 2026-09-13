@@ -1,0 +1,97 @@
+{
+ "life_areas": {
+  "Health": "3da05f50-50a5-819b-a111-df706e2a1147",
+  "Career": "3da05f50-50a5-81f6-9d8d-d546e8c3ca05",
+  "Finance": "3da05f50-50a5-8179-9b38-d7c6a9d69ff9",
+  "Learning": "3da05f50-50a5-81aa-876e-d35f98aa36fd",
+  "Relationships": "3da05f50-50a5-814c-9fb8-cb0fe6523b08",
+  "Travel": "3da05f50-50a5-81cc-b8eb-c1a7c53eb410",
+  "Home": "3da05f50-50a5-81a9-af4a-cab5a651161b",
+  "Creativity": "3da05f50-50a5-81e6-a59c-e22a4f8ef59c"
+ },
+ "continents": {
+  "Europe": "3da05f50-50a5-8136-826d-f8aa3255bf70",
+  "Asia": "3da05f50-50a5-81df-9473-ebecc3232b9e",
+  "Africa": "3da05f50-50a5-81d3-9c8a-d75f48b4c487",
+  "North America": "3da05f50-50a5-81dc-95fb-c6988b5d317f",
+  "South America": "3da05f50-50a5-8115-9a55-cc43db80f6aa",
+  "Oceania": "3da05f50-50a5-814f-9722-ee606bcdd42a"
+ },
+ "wallets": {
+  "Cash": "3da05f50-50a5-8138-810f-cad413bdae98",
+  "Main account": "3da05f50-50a5-8191-b268-d3e65e3d43a9",
+  "Credit card": "3da05f50-50a5-8191-80b3-e66b3bd96f91"
+ },
+ "food": {
+  "Eggs": "3da05f50-50a5-81f0-8fc1-d6501c21efc3",
+  "Milk": "3da05f50-50a5-81b1-bc12-f8502debc4b9",
+  "Oats": "3da05f50-50a5-8128-9d0b-cc0adda14d7b",
+  "Bananas": "3da05f50-50a5-81e4-8e77-e7df56597f02",
+  "Chicken breast": "3da05f50-50a5-81db-8c69-e365904a53fc",
+  "Rice": "3da05f50-50a5-818e-924c-e96c73a346b6",
+  "Tomatoes": "3da05f50-50a5-81e7-a645-da48fbd136fe",
+  "Olive oil": "3da05f50-50a5-81c7-814d-f9074706b6df",
+  "Spinach": "3da05f50-50a5-8165-8bd9-faad6104c349",
+  "Greek yogurt": "3da05f50-50a5-814f-b22a-f4578b14af84",
+  "Salmon": "3da05f50-50a5-813f-b1dc-deefdc8a905a",
+  "Onions": "3da05f50-50a5-8169-9efa-d60d581cd986"
+ },
+ "exercises": {
+  "Bench press": "3da05f50-50a5-81e1-88c5-e85330fc9bf7",
+  "Squat": "3da05f50-50a5-811e-a32b-e6d116acea01",
+  "Deadlift": "3da05f50-50a5-8137-8a68-cdc7bf2ed1ef",
+  "Overhead press": "3da05f50-50a5-816c-9490-da56b5d060f6",
+  "Pull-up": "3da05f50-50a5-81ff-a79e-d3076e0d48d7",
+  "Bicep curl": "3da05f50-50a5-81ce-b39c-f825832127b8",
+  "Plank": "3da05f50-50a5-81cd-9d45-d6768b0ac6dd",
+  "Leg press": "3da05f50-50a5-816e-9276-dc25e5a18be9",
+  "Lat pulldown": "3da05f50-50a5-8135-a951-df94c9a52efd",
+  "Running": "3da05f50-50a5-8156-bc0f-d07d7f9c2799"
+ },
+ "budgets": {
+  "Food": "3da05f50-50a5-81f3-a9ce-e16bd2839be6",
+  "Transport": "3da05f50-50a5-8110-825a-dd6046d4085a",
+  "Fun": "3da05f50-50a5-8118-910a-c049f20fa90b",
+  "Shopping": "3da05f50-50a5-8145-bd6c-f561fdbc8e41",
+  "Housing": "3da05f50-50a5-81a9-b0a7-f1bef2cf0613"
+ },
+ "goals": {
+  "Emergency fund": "3da05f50-50a5-81a0-be44-f5ca96f5e3f4",
+  "Half marathon": "3da05f50-50a5-8171-83fe-dfd6680b1969",
+  "Read 12 books": "3da05f50-50a5-81ab-a68f-f8adaac7b428",
+  "Japan fund": "3da05f50-50a5-8165-a683-ed971645267b",
+  "Side project": "3da05f50-50a5-8177-ac1c-ccf179af9263",
+  "Car loan extra": "3da05f50-50a5-8194-bc0c-e466f852acf1",
+  "Call parents": "3da05f50-50a5-81c1-a474-d0466cbcdb75"
+ },
+ "projects": {
+  "Website redesign": "3da05f50-50a5-817a-b243-ca7888be3c41",
+  "Home office setup": "3da05f50-50a5-812b-bcc9-e895cbd0890f",
+  "Learn Spanish": "3da05f50-50a5-814b-ad36-ffd7627b457c",
+  "Half marathon plan": "3da05f50-50a5-8194-a5b6-c118368ae37e",
+  "Japan trip planning": "3da05f50-50a5-81fc-89ad-edf4bd860f9c"
+ },
+ "spheres": {
+  "Technology": "3da05f50-50a5-8179-a0ec-c5d97e1afb83",
+  "Personal finance": "3da05f50-50a5-8163-9230-eb51bfd9bf5a",
+  "Health science": "3da05f50-50a5-81b0-9c1d-d5fe7e77c022",
+  "Design": "3da05f50-50a5-8131-9d38-dbfb795db8ee"
+ },
+ "trips": {
+  "Lisbon": "3da05f50-50a5-8120-aa3d-dfc23944a463",
+  "Bansko": "3da05f50-50a5-81eb-8474-e071876a2293",
+  "Rhodes": "3da05f50-50a5-81c5-aab4-fcffcf98e278",
+  "Vienna": "3da05f50-50a5-812b-915a-fa3f20f58c9e",
+  "Tokyo": "3da05f50-50a5-8148-819f-e30935a273a6",
+  "New York": "3da05f50-50a5-8150-8a77-c0e5c0f97e3a",
+  "Bali": "3da05f50-50a5-81cf-b773-d1ff7997f59a"
+ },
+ "topics": {
+  "LLM agents": "3da05f50-50a5-8131-9e2d-fd662da293fc",
+  "TypeScript": "3da05f50-50a5-8104-b1a5-ee6b3be2422d",
+  "Index investing": "3da05f50-50a5-815d-80dc-f33179729b8a",
+  "Budgeting": "3da05f50-50a5-81f1-9453-d1421211ac05",
+  "Sleep": "3da05f50-50a5-8153-9300-cc3e82d7b06e",
+  "Strength training": "3da05f50-50a5-8182-8529-e55ba71bc2cc"
+ }
+}
