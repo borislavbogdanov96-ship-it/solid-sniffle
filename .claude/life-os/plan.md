@@ -13,8 +13,8 @@ rebuild assessment).
 - [x] [main] Phase 1 — "Life OS" parent page + 30 databases (creation order in SCHEMA.md) + rollup post-pass + seed rows
 - [x] [main] Phase 2 — Views on every database (tabs, calendar, board by day, map, gallery spot-check)
 - [x] [main] Phase 3 — 5 dashboard pages (Home/Life Planner, Second Brain, Finance, Travel, Life OS home)
-- [ ] [opus] Phase 4a — 6 widget HTML pages in `life-os/widgets/`
-- [ ] [main] Phase 4b — push, GitHub Pages, embed
+- [x] [opus] Phase 4a — 6 widget HTML pages in `life-os/widgets/`
+- [x] [main] Phase 4b — push, GitHub Pages, embed
 - [x] [sonnet] Phase 5a — buttons (~30) + page templates (6) manual checklist
 - [ ] [main] Phase 5b — gap walk per dashboard vs. report
 

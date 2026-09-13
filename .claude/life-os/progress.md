@@ -33,3 +33,8 @@
 - `life-os/CHECKLIST.md` drafted (102 checkbox items: 29 buttons + Pay button, 6 templates, 12+ relative-date filter swaps incl. dashboard copies, Missing label formula, bar displays, Map · ideas filter, covers, widget slots, password-manager link).
 - Gap walk vs report: Life Planner's Nutrition section had no dashboard surface → added "Nutrition" tabs (Menu today / Recipes / Food storage) to Home's centre column. Sport is covered by Recent trainings + Exercises/Trainings views.
 - Widgets: sub-opus agent writing `life-os/widgets/*.html`; embed step pending its output. GitHub Pages reachability could not be checked from the sandbox (proxy 403 on github.io); assumption: Pages serves the `main` branch root (root has `.nojekyll` + `index.html`), so widgets go live at `https://borislavbogdanov96-ship-it.github.io/solid-sniffle/life-os/widgets/<name>.html` once this branch is merged.
+
+## 2026-09-13 — Session 1, Phase 4 done
+- Six widgets written by the [opus] agent in `life-os/widgets/` (clock, progress, pomodoro, weather, quote, invest + index), headless-verified in Chromium at 320/640 px, light+dark, no JS errors; Open-Meteo path verified only with stubbed responses (sandbox blocks the API).
+- Embedded as Notion HTML attachments (create-attachment from the raw GitHub URLs, then `<embed src="file-upload://…">` replacing the placeholder callouts): Home ×2, Second Brain ×4, Finance ×2, Travel ×3 = 11 embeds. Spotify slots left as instructions (needs the user's playlist).
+- Hosted alternative documented in CHECKLIST §6 (GitHub Pages after merge to main; unverified from the sandbox).

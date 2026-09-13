@@ -123,21 +123,14 @@ The same fixed-date filters exist a second time, on the linked database views em
 - [ ] Assets (5 pages) — add cover images
 - [ ] Dashboard covers are currently Notion gradients chosen for light theme — if you use dark theme, pick a different gradient per dashboard (Home, Second Brain, Finance, Travel) for better contrast
 
-## 6. Widgets (embedded in Phase 4)
+## 6. Widgets
 
-Replace each placeholder block with an actual embed once the main session supplies the URL pattern:
+All six widgets are already embedded as Notion HTML attachments (they run inside Notion, no hosting needed): Home (clock, progress bars), Second Brain (clock, Pomodoro, progress bars, quote), Finance (clock, investment calculator), Travel (clock, weather for Sofia, quote).
 
-- [ ] Home dashboard → clock + progress bars embed
-- [ ] Home dashboard → Spotify embed (paste playlist link → Embed)
-- [ ] Second Brain dashboard → clock + Pomodoro + progress bars embed
-- [ ] Second Brain dashboard → quote embed
-- [ ] Second Brain dashboard → Spotify embed (paste playlist link → Embed)
-- [ ] Finance dashboard → clock embed
-- [ ] Finance dashboard → investment calculator embed
-- [ ] Travel dashboard → clock embed
-- [ ] Travel dashboard → weather embed
-- [ ] Travel dashboard → quote embed
-- [ ] Travel dashboard → Spotify embed (paste playlist link → Embed)
+- [ ] Open each dashboard once and confirm the embeds render; if an embed shows as a file card instead of a widget, click it → "Embed".
+- [ ] Weather: confirm it reaches Open-Meteo from your browser (the build sandbox could not). If it stays on "Weather unavailable", replace the attachment with the hosted URL below.
+- [ ] Optional hosted versions with query parameters (city, time zone, accent, 12-hour clock, currency): after merging branch `claude/notion-life-os-build-e3id13` into `main`, GitHub Pages serves `https://borislavbogdanov96-ship-it.github.io/solid-sniffle/life-os/widgets/<clock|progress|pomodoro|weather|quote|invest>.html?…` (parameter docs in `life-os/widgets/index.html`). Paste such a URL into a Notion embed block to replace an attachment.
+- [ ] Spotify: on Home, Second Brain and Travel, paste a playlist link under the "Favourite music" callout and choose Embed.
 
 ## 7. Password manager
 
