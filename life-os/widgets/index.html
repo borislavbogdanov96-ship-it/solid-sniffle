@@ -1,0 +1,135 @@
+<!doctype html>
+<!--
+  index.html — directory of the Life OS Notion embed widgets.
+  Open this page to confirm hosting works, then copy a widget URL into a Notion /embed block.
+  Every widget accepts ?theme=light|dark to override the automatic light/dark detection.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Life OS — Notion Widgets</title>
+<style>
+  :root{ --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.6); --line:rgba(0,0,0,.09);
+         --code:rgba(0,0,0,.05); --accent:#3b82f6; --page:#fbfbfa; }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.04);
+      --line:rgba(255,255,255,.10); --code:rgba(255,255,255,.08); --accent:#60a5fa; --page:#191919; }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.04);
+      --line:rgba(255,255,255,.10); --code:rgba(255,255,255,.08); --accent:#60a5fa; --page:#191919; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);color:var(--fg);padding:24px 16px 48px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:14px;line-height:1.5}
+  main{max-width:760px;margin:0 auto}
+  h1{font-size:22px;font-weight:650;letter-spacing:-.02em;margin:0 0 4px}
+  .lede{color:var(--muted);margin:0 0 22px;font-size:13px}
+  section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  h2{font-size:15px;font-weight:650;margin:0 0 2px}
+  h2 a{color:var(--accent);text-decoration:none}
+  h2 a:hover{text-decoration:underline}
+  .desc{color:var(--muted);font-size:13px;margin:0 0 10px}
+  table{width:100%;border-collapse:collapse;font-size:12px}
+  td{padding:3px 0;vertical-align:top}
+  td:first-child{width:38%;padding-right:12px;white-space:nowrap}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:11.5px;
+    background:var(--code);padding:1px 5px;border-radius:5px}
+  .ex{margin-top:9px;font-size:12px;color:var(--muted)}
+  .ex a{color:var(--accent)}
+  footer{color:var(--muted);font-size:12px;margin-top:20px}
+</style>
+</head>
+<body>
+<main>
+  <h1>Life OS — Notion widgets</h1>
+  <p class="lede">Six self-contained pages, no build step and no external requests except Open-Meteo in
+  the weather widget. Paste a URL into a Notion <code>/embed</code> block. All of them follow the Notion
+  light/dark theme automatically; add <code>?theme=light</code> or <code>?theme=dark</code> to pin one.</p>
+
+  <section>
+    <h2><a href="clock.html">clock.html</a></h2>
+    <p class="desc">Current time with weekday and date.</p>
+    <table>
+      <tr><td><code>?tz=Europe/Sofia</code></td><td>IANA time zone. Default: browser zone.</td></tr>
+      <tr><td><code>?h24=1|0</code></td><td>24-hour clock. Default <code>1</code>; <code>0</code> gives AM/PM.</td></tr>
+      <tr><td><code>?seconds=1</code></td><td>Show seconds. Default off.</td></tr>
+      <tr><td><code>?label=Sofia</code></td><td>Optional caption under the date.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="clock.html?tz=Europe/Sofia&amp;seconds=1&amp;label=Sofia">clock.html?tz=Europe/Sofia&amp;seconds=1&amp;label=Sofia</a></p>
+  </section>
+
+  <section>
+    <h2><a href="pomodoro.html">pomodoro.html</a></h2>
+    <p class="desc">Focus timer with short/long breaks, session counter (long break every 4th),
+    a soft WebAudio beep on completion and four accent colours.</p>
+    <table>
+      <tr><td><code>?work=25</code></td><td>Focus minutes. Default 25.</td></tr>
+      <tr><td><code>?short=5</code></td><td>Short-break minutes. Default 5.</td></tr>
+      <tr><td><code>?long=15</code></td><td>Long-break minutes. Default 15.</td></tr>
+      <tr><td><code>?accent=blue|green|<br>purple|orange</code></td><td>Accent colour. A choice made in the widget is remembered in <code>localStorage</code> when the browser allows it.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="pomodoro.html?work=50&amp;short=10&amp;long=25&amp;accent=purple">pomodoro.html?work=50&amp;short=10&amp;long=25&amp;accent=purple</a></p>
+  </section>
+
+  <section>
+    <h2><a href="progress.html">progress.html</a></h2>
+    <p class="desc">Day / week / month / year completion bars with time remaining. Ticks every minute.</p>
+    <table>
+      <tr><td><code>?tz=Europe/Sofia</code></td><td>IANA time zone. Default: browser zone.</td></tr>
+      <tr><td><code>?weekstart=mon|sun</code></td><td>First day of the week. Default <code>mon</code>.</td></tr>
+      <tr><td><code>?show=day,week,<br>month,year</code></td><td>Which bars to render, in this order. Default: all four.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="progress.html?tz=Europe/Sofia&amp;show=week,year">progress.html?tz=Europe/Sofia&amp;show=week,year</a></p>
+  </section>
+
+  <section>
+    <h2><a href="weather.html">weather.html</a></h2>
+    <p class="desc">Current conditions from Open-Meteo (no API key). Falls back to a cached result,
+    then to a "weather unavailable" card if the network is blocked.</p>
+    <table>
+      <tr><td><code>?city=Sofia</code></td><td>City name, geocoded by Open-Meteo. Default Sofia.</td></tr>
+      <tr><td><code>?units=c|f</code></td><td>Celsius (default) or Fahrenheit; <code>f</code> also switches wind to mph.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="weather.html?city=Lisbon&amp;units=c">weather.html?city=Lisbon&amp;units=c</a></p>
+  </section>
+
+  <section>
+    <h2><a href="quote.html">quote.html</a></h2>
+    <p class="desc">Quote card with 61 built-in quotes. Contested attributions are credited as
+    "Unknown" rather than guessed.</p>
+    <table>
+      <tr><td><code>?seed=daily|random</code></td><td><code>daily</code> (default) keeps one quote per calendar day; <code>random</code> picks a new one on every load. The button always randomises.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="quote.html?seed=random">quote.html?seed=random</a></p>
+  </section>
+
+  <section>
+    <h2><a href="invest.html">invest.html</a></h2>
+    <p class="desc">Compound-interest projection with a live SVG chart. Monthly compounding,
+    deposits at the end of each month.</p>
+    <table>
+      <tr><td><code>?cur=€</code></td><td>Currency symbol. Default <code>€</code>.</td></tr>
+      <tr><td><code>?start=1000</code></td><td>Starting amount. Default 1000.</td></tr>
+      <tr><td><code>?monthly=200</code></td><td>Monthly deposit. Default 200.</td></tr>
+      <tr><td><code>?years=10</code></td><td>Horizon, 1&ndash;60. Default 10.</td></tr>
+      <tr><td><code>?rate=7</code></td><td>Annual return %, &minus;20&ndash;40. Default 7.</td></tr>
+      <tr><td><code>?theme=light|dark</code></td><td>Pin the theme.</td></tr>
+    </table>
+    <p class="ex">Example: <a href="invest.html?start=5000&amp;monthly=500&amp;years=20&amp;rate=6&amp;cur=%C2%A3">invest.html?start=5000&amp;monthly=500&amp;years=20&amp;rate=6&amp;cur=£</a></p>
+  </section>
+
+  <footer>Embedding tip: Notion embeds are roughly 300&ndash;700&nbsp;px wide. Every widget is built to
+  read cleanly from 300&nbsp;px up, on a transparent background.</footer>
+</main>
+<script>
+  var t = new URLSearchParams(location.search).get('theme');
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+</script>
+</body>
+</html>

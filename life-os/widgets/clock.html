@@ -13,6 +13,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Clock</title>
+<script>(function(){var t=new URLSearchParams(location.search).get("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);})();</script>
 <style>
   :root{
     --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
@@ -51,8 +52,6 @@
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
-  var th = q.get('theme');
-  if (th === 'light' || th === 'dark') document.documentElement.setAttribute('data-theme', th);
 
   var tz = q.get('tz') || undefined;
   try { new Intl.DateTimeFormat('en', { timeZone: tz }); } catch (e) { tz = undefined; }
@@ -64,8 +63,9 @@
 
   var timeOpts = { timeZone: tz, hour: '2-digit', minute: '2-digit' };
   if (showSec) timeOpts.second = '2-digit';
-  if (h24) { timeOpts.hour12 = false; timeOpts.hourCycle = 'h23'; } else { timeOpts.hour12 = true; }
-  var timeFmt = new Intl.DateTimeFormat('en-GB', timeOpts);
+  if (h24) { timeOpts.hour12 = false; timeOpts.hourCycle = 'h23'; }
+  else { timeOpts.hour12 = true; timeOpts.hour = 'numeric'; }
+  var timeFmt = new Intl.DateTimeFormat(h24 ? 'en-GB' : 'en-US', timeOpts);
   var dateFmt = new Intl.DateTimeFormat('en-GB', {
     timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
   });

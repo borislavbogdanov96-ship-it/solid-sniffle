@@ -1,0 +1,148 @@
+<!doctype html>
+<!--
+  weather.html — current weather via Open-Meteo (no API key) for Notion embeds.
+  Query params:
+    ?city=Sofia        City to look up (default Sofia). Geocoded with Open-Meteo geocoding.
+    ?units=c|f         Celsius (default) or Fahrenheit (also switches wind to mph).
+    ?theme=light|dark  Force theme. Default: follows Notion / OS colour scheme.
+  Behaviour: the last successful result is cached in localStorage for 30 minutes
+  (when storage is available). If the network fails and no cache exists, the card
+  shows a "Weather unavailable" state instead of erroring.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Weather</title>
+<script>(function(){var t=new URLSearchParams(location.search).get("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);})();</script>
+<style>
+  :root{
+    --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05); --line:rgba(255,255,255,.10); }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05); --line:rgba(255,255,255,.10); }
+  *{box-sizing:border-box}
+  body{margin:0;background:transparent;color:var(--fg);padding:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex;justify-content:center}
+  .card{width:100%;max-width:460px;padding:14px 16px;border-radius:12px;
+    background:var(--card);border:1px solid var(--line)}
+  .city{font-size:12px;font-weight:600;letter-spacing:.02em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .main{display:flex;align-items:center;gap:10px;margin-top:4px}
+  .icon{font-size:38px;line-height:1}
+  .temp{font-size:clamp(38px,13vw,54px);line-height:1;font-weight:650;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums}
+  .cond{font-size:13px;color:var(--muted);margin-top:6px}
+  .foot{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px;padding-top:9px;
+    border-top:1px solid var(--line);font-size:11px;color:var(--muted)}
+  .foot b{font-weight:600;color:var(--fg)}
+  .dim{opacity:.6}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="city" id="city">Loading&hellip;</div>
+  <div class="main"><span class="icon" id="icon">&#127777;&#65039;</span><span class="temp" id="temp">--&deg;</span></div>
+  <div class="cond" id="cond">Fetching weather</div>
+  <div class="foot" id="foot"></div>
+</div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+
+  var city = (q.get('city') || 'Sofia').trim() || 'Sofia';
+  var fahrenheit = (q.get('units') || 'c').toLowerCase().charAt(0) === 'f';
+  var KEY = 'wx:' + city.toLowerCase() + ':' + (fahrenheit ? 'f' : 'c');
+  var TTL = 30 * 60 * 1000;
+
+  var WMO = {
+    0:['Clear sky','☀️'], 1:['Mainly clear','🌤️'], 2:['Partly cloudy','⛅'],
+    3:['Overcast','☁️'], 45:['Fog','🌫️'], 48:['Rime fog','🌫️'],
+    51:['Light drizzle','🌦️'], 53:['Drizzle','🌦️'], 55:['Dense drizzle','🌦️'],
+    56:['Freezing drizzle','🌧️'], 57:['Freezing drizzle','🌧️'],
+    61:['Light rain','🌦️'], 63:['Rain','🌧️'], 65:['Heavy rain','🌧️'],
+    66:['Freezing rain','🌧️'], 67:['Freezing rain','🌧️'],
+    71:['Light snow','🌨️'], 73:['Snow','🌨️'], 75:['Heavy snow','❄️'],
+    77:['Snow grains','🌨️'], 80:['Light showers','🌦️'],
+    81:['Showers','🌧️'], 82:['Violent showers','⛈️'],
+    85:['Snow showers','🌨️'], 86:['Snow showers','🌨️'],
+    95:['Thunderstorm','⛈️'], 96:['Thunderstorm, hail','⛈️'], 99:['Thunderstorm, hail','⛈️']
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  function cache(v){
+    try {
+      if (v === undefined) { var s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; }
+      localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), d: v }));
+    } catch (e) { return null; }
+  }
+  function round(n){ return Math.round(n); }
+
+  function render(d, stale){
+    var w = WMO[d.code] || ['—', '🌡️'];
+    $('city').textContent = d.name;
+    $('icon').textContent = w[1];
+    $('temp').textContent = round(d.temp) + '°';
+    $('cond').textContent = w[0];
+    $('foot').innerHTML =
+      'H <b>' + round(d.hi) + '°</b>  L <b>' + round(d.lo) + '°</b>' +
+      '<span>Wind <b>' + round(d.wind) + '</b> ' + d.windUnit + '</span>' +
+      (stale ? '<span class="dim">cached</span>' : '');
+  }
+  function fail(){
+    var c = cache();
+    if (c && c.d) { render(c.d, true); return; }
+    $('city').textContent = city;
+    $('icon').textContent = '📡';
+    $('temp').textContent = '--°';
+    $('cond').textContent = 'Weather unavailable';
+    $('foot').innerHTML = '<span class="dim">Could not reach Open-Meteo</span>';
+  }
+
+  function getJSON(url){
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = setTimeout(function(){ if (ctl) ctl.abort(); }, 9000);
+    return fetch(url, ctl ? { signal: ctl.signal } : undefined).then(function(r){
+      clearTimeout(timer);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }, function(e){ clearTimeout(timer); throw e; });
+  }
+
+  var cached = cache();
+  if (cached && cached.d && (Date.now() - cached.t) < TTL) { render(cached.d, false); return; }
+  if (cached && cached.d) render(cached.d, true); // show something while refreshing
+
+  if (typeof fetch !== 'function') { fail(); return; }
+
+  getJSON('https://geocoding-api.open-meteo.com/v1/search?count=1&language=en&format=json&name=' + encodeURIComponent(city))
+    .then(function(g){
+      var p = g && g.results && g.results[0];
+      if (!p) throw new Error('city not found');
+      var u = fahrenheit ? '&temperature_unit=fahrenheit&wind_speed_unit=mph' : '';
+      return getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + p.latitude + '&longitude=' + p.longitude +
+        '&current=temperature_2m,weather_code,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto' + u)
+        .then(function(f){
+          return {
+            name: p.name + (p.country_code ? ', ' + p.country_code : ''),
+            temp: f.current.temperature_2m,
+            code: f.current.weather_code,
+            wind: f.current.wind_speed_10m,
+            windUnit: (((f.current_units && f.current_units.wind_speed_10m) || (fahrenheit ? 'mph' : 'km/h')) + '').replace('mp/h', 'mph'),
+            hi: f.daily.temperature_2m_max[0],
+            lo: f.daily.temperature_2m_min[0]
+          };
+        });
+    })
+    .then(function(d){
+      if (d.temp == null) throw new Error('no data');
+      cache(d); render(d, false);
+    })
+    .catch(function(){ fail(); });
+})();
+</script>
+</body>
+</html>

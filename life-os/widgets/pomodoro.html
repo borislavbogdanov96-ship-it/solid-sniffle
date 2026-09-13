@@ -16,6 +16,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pomodoro</title>
+<script>(function(){var t=new URLSearchParams(location.search).get("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);})();</script>
 <style>
   :root{
     --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
@@ -74,8 +75,6 @@
 <script>
 (function(){
   var q = new URLSearchParams(location.search);
-  var th = q.get('theme');
-  if (th === 'light' || th === 'dark') document.documentElement.setAttribute('data-theme', th);
 
   function store(k, v){
     try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }

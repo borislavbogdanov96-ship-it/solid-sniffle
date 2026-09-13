@@ -1,0 +1,145 @@
+<!doctype html>
+<!--
+  quote.html — quote card for Notion embeds.
+  Query params:
+    ?seed=daily|random  daily (default) = same quote all day, rotates at local midnight.
+                        random = a new quote on every load.
+    ?theme=light|dark   Force theme. Default: follows Notion / OS colour scheme.
+  The "Inspire me" button always picks a fresh random quote.
+  Attribution note: quotes are public-domain or widely documented. Anything whose
+  attribution is contested is credited as "Unknown" rather than guessed.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Quote</title>
+<script>(function(){var t=new URLSearchParams(location.search).get("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);})();</script>
+<style>
+  :root{
+    --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
+    --btn:rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --btn:rgba(255,255,255,.09); }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --btn:rgba(255,255,255,.09); }
+  *{box-sizing:border-box}
+  body{margin:0;background:transparent;color:var(--fg);padding:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex;justify-content:center}
+  .card{width:100%;max-width:560px;padding:16px 18px;border-radius:12px;
+    background:var(--card);border:1px solid var(--line)}
+  .q{font-size:clamp(15px,4.2vw,19px);line-height:1.42;font-weight:550;letter-spacing:-.005em;
+    margin:0;text-wrap:balance}
+  .a{margin-top:10px;font-size:12px;color:var(--muted);font-weight:500}
+  .a::before{content:"\2014\00a0"}
+  .bar{display:flex;justify-content:flex-end;margin-top:12px}
+  button{font:inherit;font-size:12px;font-weight:600;padding:6px 13px;border:1px solid var(--line);
+    border-radius:8px;background:var(--btn);color:var(--fg);cursor:pointer}
+  button:hover{opacity:.82}
+</style>
+</head>
+<body>
+<div class="card">
+  <p class="q" id="q"></p>
+  <div class="a" id="a"></div>
+  <div class="bar"><button id="btn" type="button">Inspire me</button></div>
+</div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+
+  var Q = [
+["Waste no more time arguing about what a good man should be. Be one.","Marcus Aurelius"],
+["If it is not right, do not do it; if it is not true, do not say it.","Marcus Aurelius"],
+["The best revenge is to be unlike him who performed the injury.","Marcus Aurelius"],
+["Confine yourself to the present.","Marcus Aurelius"],
+["Loss is nothing else but change, and change is Nature’s delight.","Marcus Aurelius"],
+["We suffer more often in imagination than in reality.","Seneca"],
+["It is not that we have a short time to live, but that we waste a lot of it.","Seneca"],
+["While we are postponing, life speeds by.","Seneca"],
+["As long as you live, keep learning how to live.","Seneca"],
+["Difficulties strengthen the mind, as labor does the body.","Seneca"],
+["First say to yourself what you would be; and then do what you have to do.","Epictetus"],
+["It’s not what happens to you, but how you react to it that matters.","Epictetus"],
+["A journey of a thousand miles begins with a single step.","Lao Tzu"],
+["He who knows others is wise; he who knows himself is enlightened.","Lao Tzu"],
+["Mastering others is strength. Mastering yourself is true power.","Lao Tzu"],
+["When I let go of what I am, I become what I might be.","Lao Tzu"],
+["When you know a thing, to hold that you know it; and when you do not know a thing, to allow that you do not know it — this is knowledge.","Confucius"],
+["The man who moves a mountain begins by carrying away small stones.","Confucius"],
+["Our greatest glory is not in never falling, but in rising every time we fall.","Confucius"],
+["Study the past if you would define the future.","Confucius"],
+["Well done is better than well said.","Benjamin Franklin"],
+["Lost time is never found again.","Benjamin Franklin"],
+["An investment in knowledge pays the best interest.","Benjamin Franklin"],
+["Either write something worth reading or do something worth writing.","Benjamin Franklin"],
+["You must do the thing you think you cannot do.","Eleanor Roosevelt"],
+["No one can make you feel inferior without your consent.","Eleanor Roosevelt"],
+["The future belongs to those who believe in the beauty of their dreams.","Eleanor Roosevelt"],
+["Nothing will work unless you do.","Maya Angelou"],
+["We may encounter many defeats but we must not be defeated.","Maya Angelou"],
+["If you don’t like something, change it. If you can’t change it, change your attitude.","Maya Angelou"],
+["The only true wisdom is in knowing you know nothing.","Socrates"],
+["The beginning is the most important part of the work.","Plato"],
+["Knowing yourself is the beginning of all wisdom.","Aristotle"],
+["We are what we repeatedly do. Excellence, then, is not an act, but a habit.","Will Durant, summarising Aristotle"],
+["No man ever steps in the same river twice.","Heraclitus"],
+["In the midst of chaos, there is also opportunity.","Sun Tzu"],
+["Anyone can hold the helm when the sea is calm.","Publilius Syrus"],
+["No act of kindness, no matter how small, is ever wasted.","Aesop"],
+["Not what we have but what we enjoy constitutes our abundance.","Epicurus"],
+["It is not enough to be busy. The question is: what are we busy about?","Henry David Thoreau"],
+["Nothing great was ever achieved without enthusiasm.","Ralph Waldo Emerson"],
+["Whenever you find yourself on the side of the majority, it is time to pause and reflect.","Mark Twain"],
+["Do what you can, with what you have, where you are.","Theodore Roosevelt"],
+["Alone we can do so little; together we can do so much.","Helen Keller"],
+["Optimism is the faith that leads to achievement.","Helen Keller"],
+["Nothing in life is to be feared, it is only to be understood.","Marie Curie"],
+["Life is like riding a bicycle. To keep your balance, you must keep moving.","Albert Einstein"],
+["I have not failed. I’ve just found 10,000 ways that won’t work.","Thomas Edison"],
+["If there is no struggle, there is no progress.","Frederick Douglass"],
+["Success is to be measured not so much by the position that one has reached in life as by the obstacles which he has overcome.","Booker T. Washington"],
+["The most difficult thing is the decision to act, the rest is merely tenacity.","Amelia Earhart"],
+["Life shrinks or expands in proportion to one’s courage.","Anaïs Nin"],
+["Act as if what you do makes a difference. It does.","William James"],
+["It always seems impossible until it’s done.","Nelson Mandela"],
+["The best way to predict the future is to invent it.","Alan Kay"],
+["Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.","Antoine de Saint-Exupéry"],
+["Knowing is not enough; we must apply. Willing is not enough; we must do.","Johann Wolfgang von Goethe"],
+["When we are no longer able to change a situation, we are challenged to change ourselves.","Viktor E. Frankl"],
+["Fall seven times, stand up eight.","Japanese proverb"],
+["Success is not final, failure is not fatal: it is the courage to continue that counts.","Unknown"],
+["The best time to plant a tree was twenty years ago. The second best time is now.","Proverb"]
+  ];
+
+  var qEl = document.getElementById('q'), aEl = document.getElementById('a');
+  var current = -1;
+
+  function show(i){
+    current = i;
+    qEl.textContent = '“' + Q[i][0] + '”';
+    aEl.textContent = Q[i][1];
+  }
+  function dailyIndex(){
+    var n = new Date();
+    // Local calendar day -> stable index, rotates at midnight.
+    var days = Math.floor(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate()) / 86400000);
+    return ((days % Q.length) + Q.length) % Q.length;
+  }
+  function randomIndex(){
+    if (Q.length < 2) return 0;
+    var i;
+    do { i = Math.floor(Math.random() * Q.length); } while (i === current);
+    return i;
+  }
+
+  show((q.get('seed') || 'daily').toLowerCase() === 'random' ? randomIndex() : dailyIndex());
+  document.getElementById('btn').onclick = function(){ show(randomIndex()); };
+})();
+</script>
+</body>
+</html>

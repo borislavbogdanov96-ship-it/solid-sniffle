@@ -1,0 +1,190 @@
+<!doctype html>
+<!--
+  invest.html — compound-interest projection for Notion embeds.
+  Query params:
+    ?cur=€             Currency symbol (default €).
+    ?start=1000        Starting amount (default 1000).
+    ?monthly=200       Monthly deposit (default 200).
+    ?years=10          Horizon in years (default 10, clamped 1-60).
+    ?rate=7            Annual return % (default 7, clamped -20..40).
+    ?theme=light|dark  Force theme. Default: follows Notion / OS colour scheme.
+  Maths: monthly compounding, deposits made at the end of each month.
+         balance = start*(1+i)^n + monthly*((1+i)^n - 1)/i,  i = rate/100/12,  n = years*12.
+  Inputs recalculate live; nothing is stored or sent anywhere.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Investment Calculator</title>
+<script>(function(){var t=new URLSearchParams(location.search).get("theme");if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t);})();</script>
+<style>
+  :root{
+    --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
+    --field:rgba(0,0,0,.04); --accent:#10a37f; --grid:rgba(0,0,0,.10);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --field:rgba(255,255,255,.07); --accent:#34d399; --grid:rgba(255,255,255,.12); }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --field:rgba(255,255,255,.07); --accent:#34d399; --grid:rgba(255,255,255,.12); }
+  *{box-sizing:border-box}
+  body{margin:0;background:transparent;color:var(--fg);padding:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex;justify-content:center}
+  .card{width:100%;max-width:560px;padding:14px 16px;border-radius:12px;
+    background:var(--card);border:1px solid var(--line)}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  label{display:block;font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:3px}
+  input{width:100%;font:inherit;font-size:13px;font-weight:600;padding:6px 8px;border-radius:8px;
+    border:1px solid var(--line);background:var(--field);color:var(--fg);
+    font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+  input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input:focus{outline:2px solid var(--accent);outline-offset:-1px}
+  .result{margin-top:13px}
+  .big{font-size:clamp(30px,10vw,42px);line-height:1.05;font-weight:650;letter-spacing:-.025em;
+    font-variant-numeric:tabular-nums}
+  .sub{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+  .split{display:flex;gap:18px;margin-top:9px;flex-wrap:wrap}
+  .split div{min-width:88px}
+  .split b{display:block;font-size:14px;font-weight:650;font-variant-numeric:tabular-nums;margin-top:1px}
+  .growth{color:var(--accent)}
+  .chart{margin-top:11px}
+  svg{display:block;width:100%;height:auto}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grid">
+    <div><label for="start">Starting</label><input id="start" type="number" inputmode="decimal" min="0" step="100"></div>
+    <div><label for="monthly">Monthly</label><input id="monthly" type="number" inputmode="decimal" min="0" step="50"></div>
+    <div><label for="years">Years</label><input id="years" type="number" inputmode="numeric" min="1" max="60" step="1"></div>
+    <div><label for="rate">Return %/yr</label><input id="rate" type="number" inputmode="decimal" step="0.5"></div>
+  </div>
+  <div class="result">
+    <div class="sub">Projected balance</div>
+    <div class="big" id="total">—</div>
+    <div class="split">
+      <div><span class="sub">Contributed</span><b id="contrib">—</b></div>
+      <div><span class="sub">Growth</span><b class="growth" id="growth">—</b></div>
+    </div>
+  </div>
+  <div class="chart" id="chart"></div>
+</div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+
+  var CUR = q.get('cur') || '€';
+  var $ = function(id){ return document.getElementById(id); };
+  function initial(name, def, lo, hi){
+    var n = parseFloat(q.get(name));
+    if (!isFinite(n)) n = def;
+    return Math.min(hi, Math.max(lo, n));
+  }
+  $('start').value   = initial('start', 1000, 0, 1e9);
+  $('monthly').value = initial('monthly', 200, 0, 1e7);
+  $('years').value   = Math.round(initial('years', 10, 1, 60));
+  $('rate').value    = initial('rate', 7, -20, 40);
+
+  var money = new Intl.NumberFormat('en-GB', { maximumFractionDigits: 0 });
+  function fmt(n){ return CUR + money.format(Math.round(n)); }
+  function compact(n){
+    var a = Math.abs(n);
+    if (a >= 1e6) return CUR + (n / 1e6).toFixed(a >= 1e7 ? 0 : 1) + 'M';
+    if (a >= 1e3) return CUR + Math.round(n / 1e3) + 'k';
+    return CUR + Math.round(n);
+  }
+  function read(id, def, lo, hi){
+    var n = parseFloat($(id).value);
+    if (!isFinite(n)) n = def;
+    return Math.min(hi, Math.max(lo, n));
+  }
+
+  function balanceAt(P, PMT, i, n){
+    if (Math.abs(i) < 1e-12) return P + PMT * n;
+    var g = Math.pow(1 + i, n);
+    return P * g + PMT * (g - 1) / i;
+  }
+
+  var chart = $('chart');
+
+  function draw(series, years){
+    var W = Math.max(240, chart.clientWidth || 300), H = 130;
+    var padL = 4, padR = 4, padT = 12, padB = 16, plotH = H - padT - padB;
+    var maxV = Math.max.apply(null, series), minV = Math.min.apply(null, series);
+    var top = Math.max(maxV, 1), bottom = Math.min(0, minV);
+    var span = (top - bottom) || 1;
+    var x = function(k){ return padL + (W - padL - padR) * (series.length > 1 ? k / (series.length - 1) : 0); };
+    var y = function(v){ return padT + plotH * (1 - (v - bottom) / span); };
+
+    var line = '', area = '';
+    for (var k = 0; k < series.length; k++) line += (k ? 'L' : 'M') + x(k).toFixed(1) + ' ' + y(series[k]).toFixed(1) + ' ';
+    area = line + 'L' + x(series.length - 1).toFixed(1) + ' ' + y(bottom).toFixed(1) +
+           ' L' + x(0).toFixed(1) + ' ' + y(bottom).toFixed(1) + ' Z';
+
+    var mid = bottom + span / 2;
+    var gy = [top, mid, bottom];
+    var grid = '';
+    for (var j = 0; j < gy.length; j++) {
+      grid += '<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + y(gy[j]).toFixed(1) +
+              '" y2="' + y(gy[j]).toFixed(1) + '" stroke="var(--grid)" stroke-width="1" ' +
+              (j === gy.length - 1 ? '' : 'stroke-dasharray="2 3" ') + '/>';
+    }
+
+    var svg =
+      '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" ' +
+      'aria-label="Projected balance by year">' +
+      '<defs><linearGradient id="ig" x1="0" y1="0" x2="0" y2="1">' +
+      '<stop offset="0%" stop-color="var(--accent)" stop-opacity=".28"/>' +
+      '<stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>' +
+      grid +
+      '<path d="' + area + '" fill="url(#ig)"/>' +
+      '<path d="' + line + '" fill="none" stroke="var(--accent)" stroke-width="2" ' +
+      'stroke-linejoin="round" stroke-linecap="round"/>' +
+      '<circle cx="' + x(series.length - 1).toFixed(1) + '" cy="' + y(series[series.length - 1]).toFixed(1) +
+      '" r="2.8" fill="var(--accent)"/>' +
+      '<text x="' + padL + '" y="' + (y(top) - 4).toFixed(1) + '" font-size="9" fill="var(--muted)">' +
+      compact(maxV) + '</text>' +
+      '<text x="' + padL + '" y="' + (H - 4) + '" font-size="9" fill="var(--muted)">0y</text>' +
+      '<text x="' + (W - padR) + '" y="' + (H - 4) + '" font-size="9" fill="var(--muted)" text-anchor="end">' +
+      years + 'y</text>' +
+      '</svg>';
+    chart.innerHTML = svg;
+  }
+
+  function calc(){
+    var P = read('start', 1000, 0, 1e9);
+    var PMT = read('monthly', 200, 0, 1e7);
+    var Y = Math.round(read('years', 10, 1, 60));
+    var R = read('rate', 7, -20, 40);
+    var i = R / 100 / 12;
+
+    var series = [];
+    for (var yr = 0; yr <= Y; yr++) series.push(balanceAt(P, PMT, i, yr * 12));
+
+    var total = series[Y];
+    var contributed = P + PMT * 12 * Y;
+    $('total').textContent = fmt(total);
+    $('contrib').textContent = fmt(contributed);
+    $('growth').textContent = (total - contributed >= 0 ? '+' : '−') + fmt(Math.abs(total - contributed));
+    draw(series, Y);
+  }
+
+  var ids = ['start', 'monthly', 'years', 'rate'];
+  for (var n = 0; n < ids.length; n++) $(ids[n]).addEventListener('input', calc);
+
+  // Redraw on width change only — guarded so re-rendering the SVG cannot loop.
+  var lastW = 0;
+  function onResize(){ var w = chart.clientWidth; if (w && w !== lastW) { lastW = w; calc(); } }
+  if (window.ResizeObserver) new ResizeObserver(onResize).observe(document.querySelector('.card'));
+  else window.addEventListener('resize', onResize);
+
+  lastW = chart.clientWidth;
+  calc();
+})();
+</script>
+</body>
+</html>
