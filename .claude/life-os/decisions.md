@@ -41,3 +41,8 @@ Append-only, newest first.
 **Decision.** "Today / This week / This month / Last 10 days" views filter on fixed dates (13 Sep 2026, 7–13 Sep, Sept 2026, 4–13 Sep). The hidden boolean formulas stay in the schema; the user switches each view's filter to them in the UI (Phase 5 checklist).
 **Why.** The MCP View DSL ignores filters on formula properties without raising an error, and has no relative-date tokens. Fixed dates make every dashboard render correctly on delivery day; the formula swap makes them permanent.
 **Supersedes.** "Relative-date views use hidden boolean formulas" (same day) as the *view* mechanism; the formulas themselves remain.
+
+## 2026-09-13 — Dashboards: append linked views, then move them by rewriting the page
+
+**Decision.** For every dashboard widget: create-view (parent_page_id) → fetch page → replace_content with the returned `<database url=…>` tags placed inside `<columns>` / `<tabs>`.
+**Why.** The markdown `<database data-source-url>` tag is refused by create-pages for these data sources; relocating the block tag is the only way to get configured linked views into a column layout through the connector. Verified on Home: filters survive the move.
