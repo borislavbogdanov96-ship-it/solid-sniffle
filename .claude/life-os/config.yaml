@@ -1,0 +1,29 @@
+# Project config — Life OS (Notion build)
+
+project:
+  name: life-os
+  jira_epic:
+  status: build
+  owner: Borislav Bogdanov
+
+slack_channels: []
+
+stakeholders:
+  - name: Borislav Bogdanov
+    role: owner / sole user
+    cares_about: 1:1 parity with the four Templation templates; nothing else in the workspace touched
+
+vendors:
+  - name: Notion (MCP connector)
+    mechanism: create-database / update-data-source / create-view / create-pages under the "Life OS" parent page
+  - name: Templation.io
+    mechanism: source templates (Second Brain OS, Finance Tracker OS, Life Planner OS, Travel Planner OS); no live demo, rebuilt from screenshots
+  - name: GitHub Pages
+    mechanism: hosts the six widget HTML pages from life-os/widgets/
+
+teams: []
+
+links:
+  research_report: https://claude.ai/code/artifact/0c681608-49b0-40c9-bfd0-b270fadabdbb
+  schema_spec: life-os/SCHEMA.md
+  notion_parent_page:   # filled after Phase 1

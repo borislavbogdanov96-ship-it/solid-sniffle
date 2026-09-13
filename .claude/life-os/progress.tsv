@@ -1,0 +1,5 @@
+date	type	metric	value	status
+# Append-only. One row per session/milestone. Tab-separated. Never rewrite existing rows.
+2026-09-13	analysis	Notion MCP capability audit	views yes / buttons no / templates no	done
+2026-09-13	spec	databases specified in SCHEMA.md	30	done
+2026-09-13	build	databases created in Notion	0	open
