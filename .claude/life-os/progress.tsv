@@ -10,3 +10,4 @@ date	type	metric	value	status
 2026-09-13	build	views needing manual relative-date filter swap	12	open
 2026-09-13	build	dashboard pages assembled	4 + parent nav	done
 2026-09-13	build	linked views on dashboards	77	done
+2026-09-13	spec	manual checklist items	102	done

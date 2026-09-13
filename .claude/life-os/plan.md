@@ -15,7 +15,7 @@ rebuild assessment).
 - [x] [main] Phase 3 — 5 dashboard pages (Home/Life Planner, Second Brain, Finance, Travel, Life OS home)
 - [ ] [opus] Phase 4a — 6 widget HTML pages in `life-os/widgets/`
 - [ ] [main] Phase 4b — push, GitHub Pages, embed
-- [ ] [sonnet] Phase 5a — buttons (~30) + page templates (6) manual checklist
+- [x] [sonnet] Phase 5a — buttons (~30) + page templates (6) manual checklist
 - [ ] [main] Phase 5b — gap walk per dashboard vs. report
 
 ## Ground rules (from the handoff)

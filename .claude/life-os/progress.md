@@ -28,3 +28,8 @@
 - Lisbon trip page carries Schedule by day / Timeline / By type linked views filtered to itself = exemplar for the Trip template.
 - Placeholders left for widgets (Phase 4) and buttons (Phase 5).
 - Page IDs: Home 3da05f50-50a5-813f-9d63-d05b570ab5cb · Second Brain 3da05f50-50a5-818d-a5bb-d23477afdac6 · Finance 3da05f50-50a5-8124-8767-c7f4d2d7e148 · Travel 3da05f50-50a5-81c9-99c9-fea40273ef3e.
+
+## 2026-09-13 — Session 1, Phase 5a done + Home Nutrition
+- `life-os/CHECKLIST.md` drafted (102 checkbox items: 29 buttons + Pay button, 6 templates, 12+ relative-date filter swaps incl. dashboard copies, Missing label formula, bar displays, Map · ideas filter, covers, widget slots, password-manager link).
+- Gap walk vs report: Life Planner's Nutrition section had no dashboard surface → added "Nutrition" tabs (Menu today / Recipes / Food storage) to Home's centre column. Sport is covered by Recent trainings + Exercises/Trainings views.
+- Widgets: sub-opus agent writing `life-os/widgets/*.html`; embed step pending its output. GitHub Pages reachability could not be checked from the sandbox (proxy 403 on github.io); assumption: Pages serves the `main` branch root (root has `.nojekyll` + `index.html`), so widgets go live at `https://borislavbogdanov96-ship-it.github.io/solid-sniffle/life-os/widgets/<name>.html` once this branch is merged.
