@@ -15,3 +15,9 @@
 - Seeded 218 illustrative rows across all 30 databases (IDs of relation targets in `life-os/seed-ids.json`).
 - Deviations: (1) API formula validator rejects lambda functions (`filter`/`map`/`current`) and formulas over rollups of formulas, so Recipes "Missing" is the raw rollup of out-of-stock ingredient names instead of the "Missing: Eggs" string; the pretty formula goes on the Phase 5 manual checklist. (2) Life areas "Tasks count" goes through a helper formula `Task count (n)` on Projects because a rollup cannot target another rollup. (3) Goals Target/Current are plain numbers, not euro, so count goals render sensibly.
 - Next: Phase 2 views.
+
+## 2026-09-13 — Session 1, Phase 2 done
+- 133 views created across the 30 databases (tables, boards, galleries, calendars, timelines, 3 maps, 3 charts). Every type rendered/accepted: gallery views did not 400.
+- Finding: the View DSL silently drops FILTER clauses on formula properties (true/TRUE/"true"/!= FALSE all ignored) and stores relative tokens like "today" as literals. Relative-date views therefore use fixed ISO ranges for 13 Sep 2026 / week 7–13 Sep / Sept 2026; swapping each to its `Is today` / `Is this week` / `Is this month` / `Last 10 days` formula filter is a one-click UI step listed for Phase 5 (12 views: Tasks Today/This week/This month, Habit days Today/Last 10 days, Transactions Today/This week/This month, Budgets This month, Recipes Menu today, Trainings This week, Goals This month n/a—uses Period).
+- Notes got a `Date` property because calendars cannot use created_time.
+- Next: Phase 3 dashboards.

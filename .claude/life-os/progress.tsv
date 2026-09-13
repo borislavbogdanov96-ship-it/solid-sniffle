@@ -6,3 +6,5 @@ date	type	metric	value	status
 2026-09-13	build	databases created in Notion	30	done
 2026-09-13	build	seed rows created	218	done
 2026-09-13	build	formulas deferred to manual checklist	1 (Recipes Missing pretty label)	open
+2026-09-13	build	views created in Notion	133	done
+2026-09-13	build	views needing manual relative-date filter swap	12	open
