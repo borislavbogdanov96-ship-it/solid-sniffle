@@ -13,3 +13,4 @@ date	type	metric	value	status
 2026-09-13	spec	manual checklist items	102	done
 2026-09-13	build	widgets written and verified	6	done
 2026-09-13	build	widget embeds placed on dashboards	11	done
+2026-09-13	review	dashboards walked against report	4/4	done

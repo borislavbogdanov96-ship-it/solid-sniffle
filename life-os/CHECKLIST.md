@@ -84,8 +84,8 @@ The same fixed-date filters exist a second time, on the linked database views em
 - [ ] Home dashboard → Tasks This month linked view → "Is this month"
 - [ ] Home dashboard → Habits today linked view → "Is today"
 - [ ] Home dashboard → 10-day tracker linked view → "Last 10 days"
-- [ ] Second Brain dashboard → Tasks All linked view → "Is today"/"Is this week"/"Is this month" as applicable
-- [ ] Second Brain dashboard → Tasks By priority linked view → same as above
+- [ ] Second Brain dashboard → Tasks All linked view → "Is this week"
+- [ ] Second Brain dashboard → Tasks By priority linked view → "Is this week"
 - [ ] Second Brain dashboard → Habits today linked view → "Is today"
 - [ ] Finance dashboard → Monthly budgets linked view → "Is this month"
 - [ ] Finance dashboard → Month budget chart linked view → "Is this month"

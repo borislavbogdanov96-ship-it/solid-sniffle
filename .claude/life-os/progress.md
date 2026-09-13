@@ -38,3 +38,7 @@
 - Six widgets written by the [opus] agent in `life-os/widgets/` (clock, progress, pomodoro, weather, quote, invest + index), headless-verified in Chromium at 320/640 px, light+dark, no JS errors; Open-Meteo path verified only with stubbed responses (sandbox blocks the API).
 - Embedded as Notion HTML attachments (create-attachment from the raw GitHub URLs, then `<embed src="file-upload://…">` replacing the placeholder callouts): Home ×2, Second Brain ×4, Finance ×2, Travel ×3 = 11 embeds. Spotify slots left as instructions (needs the user's playlist).
 - Hosted alternative documented in CHECKLIST §6 (GitHub Pages after merge to main; unverified from the sandbox).
+
+## 2026-09-13 — Session 1, Phase 5b (gap walk) done
+- Walked each dashboard against the report's feature inventory. Covered: every item in the handoff's dashboard lists plus Nutrition on Home. Not automatable, on the checklist: ~30 buttons + Pay button, 6 templates, relative-date filter swaps (12 DB views + 11 dashboard copies), Missing label formula, bar/ring displays, Map · ideas filter, cover images, Spotify, password-manager link.
+- Session closed with resume.md + session brief updated.

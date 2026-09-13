@@ -16,7 +16,7 @@ rebuild assessment).
 - [x] [opus] Phase 4a — 6 widget HTML pages in `life-os/widgets/`
 - [x] [main] Phase 4b — push, GitHub Pages, embed
 - [x] [sonnet] Phase 5a — buttons (~30) + page templates (6) manual checklist
-- [ ] [main] Phase 5b — gap walk per dashboard vs. report
+- [x] [main] Phase 5b — gap walk per dashboard vs. report
 
 ## Ground rules (from the handoff)
 - Build only under the single parent page "Life OS". Touch nothing else in the workspace.
