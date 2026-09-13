@@ -1,0 +1,186 @@
+<!doctype html>
+<!--
+  pomodoro.html — Pomodoro timer for Notion embeds.
+  Query params:
+    ?work=25           Work minutes (default 25).
+    ?short=5           Short-break minutes (default 5).
+    ?long=15           Long-break minutes (default 15).
+    ?accent=blue|green|purple|orange   Initial accent (default blue).
+                       A picked accent is remembered in localStorage when available.
+    ?theme=light|dark  Force theme. Default: follows Notion / OS colour scheme.
+  Notes: a long break is suggested after every 4 completed work sessions.
+         Completion plays a short WebAudio beep (needs one prior click, per browser policy).
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pomodoro</title>
+<style>
+  :root{
+    --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
+    --btn:rgba(0,0,0,.05); --track:rgba(0,0,0,.09); --accent:#3b82f6;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --btn:rgba(255,255,255,.08); --track:rgba(255,255,255,.12); }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --btn:rgba(255,255,255,.08); --track:rgba(255,255,255,.12); }
+  *{box-sizing:border-box}
+  body{margin:0;background:transparent;color:var(--fg);padding:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex;justify-content:center}
+  .card{width:100%;max-width:420px;padding:14px 16px 12px;border-radius:12px;
+    background:var(--card);border:1px solid var(--line);text-align:center}
+  .modes{display:flex;gap:4px;margin-bottom:10px}
+  .modes button{flex:1;padding:6px 2px;font:inherit;font-size:11px;font-weight:600;
+    border:0;border-radius:8px;background:var(--btn);color:var(--muted);cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .modes button[aria-pressed="true"]{background:var(--accent);color:#fff}
+  .time{font-size:clamp(42px,17vw,64px);line-height:1.05;font-weight:650;letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums}
+  .track{height:4px;border-radius:99px;background:var(--track);overflow:hidden;margin:8px 0 10px}
+  .bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .25s linear}
+  .row{display:flex;gap:6px;align-items:center;justify-content:center}
+  .row button{padding:7px 16px;font:inherit;font-size:13px;font-weight:600;border:0;border-radius:8px;
+    background:var(--btn);color:var(--fg);cursor:pointer}
+  .row button.primary{background:var(--accent);color:#fff;min-width:88px}
+  .foot{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+  .count{font-size:11px;color:var(--muted);letter-spacing:.03em}
+  .dots{display:flex;gap:5px}
+  .dots button{width:13px;height:13px;padding:0;border-radius:50%;border:1px solid var(--line);cursor:pointer}
+  .dots button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--card),0 0 0 3px currentColor}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="modes">
+    <button id="m-work" data-mode="work" aria-pressed="true">Focus</button>
+    <button id="m-short" data-mode="short" aria-pressed="false">Short</button>
+    <button id="m-long" data-mode="long" aria-pressed="false">Long</button>
+  </div>
+  <div class="time" id="time">25:00</div>
+  <div class="track"><div class="bar" id="bar"></div></div>
+  <div class="row">
+    <button class="primary" id="startBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div class="foot">
+    <span class="count" id="count">0 of 4 done</span>
+    <span class="dots" id="dots"></span>
+  </div>
+</div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+  var th = q.get('theme');
+  if (th === 'light' || th === 'dark') document.documentElement.setAttribute('data-theme', th);
+
+  function store(k, v){
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }
+    catch (e) { return null; }
+  }
+  function num(name, def){
+    var n = parseFloat(q.get(name));
+    return (isFinite(n) && n > 0 && n <= 600) ? n : def;
+  }
+
+  var MIN = { work: num('work', 25), short: num('short', 5), long: num('long', 15) };
+  var LABEL = { work: 'Focus', short: 'Short break', long: 'Long break' };
+  document.getElementById('m-work').textContent = 'Focus ' + MIN.work;
+  document.getElementById('m-short').textContent = 'Short ' + MIN.short;
+  document.getElementById('m-long').textContent = 'Long ' + MIN.long;
+
+  var ACCENTS = { blue:'#3b82f6', green:'#10a37f', purple:'#8b5cf6', orange:'#f97316' };
+  var accent = q.get('accent') || store('pomo.accent') || 'blue';
+  if (!ACCENTS[accent]) accent = 'blue';
+
+  var dots = document.getElementById('dots');
+  Object.keys(ACCENTS).forEach(function(name){
+    var b = document.createElement('button');
+    b.style.background = ACCENTS[name];
+    b.style.color = ACCENTS[name];
+    b.title = name;
+    b.setAttribute('aria-label', name + ' accent');
+    b.onclick = function(){ accent = name; store('pomo.accent', name); paintAccent(); };
+    dots.appendChild(b);
+  });
+  function paintAccent(){
+    document.documentElement.style.setProperty('--accent', ACCENTS[accent]);
+    var bs = dots.querySelectorAll('button'), names = Object.keys(ACCENTS);
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', names[i] === accent ? 'true' : 'false');
+  }
+  paintAccent();
+
+  var mode = 'work', total = MIN.work * 60, left = total, running = false, done = 0, tid = null;
+  var timeEl = document.getElementById('time'), barEl = document.getElementById('bar');
+  var startBtn = document.getElementById('startBtn'), countEl = document.getElementById('count');
+
+  function render(){
+    var s = Math.max(0, Math.ceil(left));
+    timeEl.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    barEl.style.width = (total ? (1 - s / total) * 100 : 0) + '%';
+    startBtn.textContent = running ? 'Pause' : 'Start';
+    countEl.textContent = done + ' of 4 done · ' + LABEL[mode];
+    var bs = document.querySelectorAll('.modes button');
+    for (var i = 0; i < bs.length; i++) bs[i].setAttribute('aria-pressed', bs[i].dataset.mode === mode ? 'true' : 'false');
+  }
+
+  function setMode(m, autostart){
+    mode = m; total = MIN[m] * 60; left = total;
+    stop(); render();
+    if (autostart) {/* manual start only */}
+  }
+
+  var ac = null;
+  function beep(){
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return;
+      if (!ac) ac = new AC();
+      if (ac.state === 'suspended') ac.resume();
+      [0, 0.22].forEach(function(off, i){
+        var o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime + off;
+        o.type = 'sine'; o.frequency.value = i ? 660 : 880;
+        g.gain.setValueAtTime(0.0001, t);
+        g.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+        o.connect(g); g.connect(ac.destination); o.start(t); o.stop(t + 0.2);
+      });
+    } catch (e) {}
+  }
+
+  var endAt = 0;
+  function stop(){ running = false; if (tid) { clearInterval(tid); tid = null; } }
+  function start(){
+    if (left <= 0) left = total;
+    endAt = Date.now() + left * 1000;
+    running = true;
+    tid = setInterval(function(){
+      left = (endAt - Date.now()) / 1000;
+      if (left <= 0) { left = 0; stop(); finish(); }
+      render();
+    }, 200);
+    render();
+  }
+  function finish(){
+    beep();
+    if (mode === 'work') { done += 1; setMode(done % 4 === 0 ? 'long' : 'short'); }
+    else { if (mode === 'long') done = 0; setMode('work'); }
+  }
+
+  startBtn.onclick = function(){
+    // Touch the AudioContext on a user gesture so the completion beep is allowed later.
+    try { var AC = window.AudioContext || window.webkitAudioContext; if (AC && !ac) ac = new AC(); if (ac && ac.state === 'suspended') ac.resume(); } catch (e) {}
+    running ? (stop(), render()) : start();
+  };
+  document.getElementById('resetBtn').onclick = function(){ stop(); left = total; render(); };
+  var mb = document.querySelectorAll('.modes button');
+  for (var i = 0; i < mb.length; i++) mb[i].onclick = function(){ setMode(this.dataset.mode); };
+
+  render();
+})();
+</script>
+</body>
+</html>

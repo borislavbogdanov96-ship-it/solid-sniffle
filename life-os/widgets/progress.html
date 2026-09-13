@@ -1,0 +1,127 @@
+<!doctype html>
+<!--
+  progress.html — Day / Week / Month / Year progress bars for Notion embeds.
+  Query params:
+    ?tz=Europe/Sofia   IANA time zone. Default: browser time zone.
+    ?weekstart=mon|sun Week start day (default mon).
+    ?show=day,week,month,year   Subset + order of bars (default all four).
+    ?theme=light|dark  Force theme. Default: follows Notion / OS colour scheme.
+  Refreshes every minute.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Time Progress</title>
+<style>
+  :root{
+    --fg:#1f2328; --muted:#6b7280; --card:rgba(255,255,255,.55); --line:rgba(0,0,0,.09);
+    --track:rgba(0,0,0,.09); --accent:#3b82f6;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --track:rgba(255,255,255,.13); --accent:#60a5fa; }
+  }
+  :root[data-theme="dark"]{ --fg:#e8eaed; --muted:#9aa4b2; --card:rgba(255,255,255,.05);
+      --line:rgba(255,255,255,.10); --track:rgba(255,255,255,.13); --accent:#60a5fa; }
+  *{box-sizing:border-box}
+  body{margin:0;background:transparent;color:var(--fg);padding:10px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    display:flex;justify-content:center}
+  .card{width:100%;max-width:520px;padding:14px 16px;border-radius:12px;
+    background:var(--card);border:1px solid var(--line)}
+  .row + .row{margin-top:12px}
+  .head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:5px}
+  .name{font-size:12px;font-weight:600;letter-spacing:.02em}
+  .left{font-size:11px;color:var(--muted);white-space:nowrap}
+  .pct{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .track{height:6px;border-radius:99px;background:var(--track);overflow:hidden}
+  .bar{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .4s ease}
+  .meta{margin-top:11px;font-size:10px;color:var(--muted);opacity:.75;text-align:right;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<div class="card" id="card"></div>
+<script>
+(function(){
+  var q = new URLSearchParams(location.search);
+  var th = q.get('theme');
+  if (th === 'light' || th === 'dark') document.documentElement.setAttribute('data-theme', th);
+
+  var tz = q.get('tz') || undefined;
+  try { new Intl.DateTimeFormat('en', { timeZone: tz }); } catch (e) { tz = undefined; }
+  var resolvedTz = new Intl.DateTimeFormat('en', { timeZone: tz }).resolvedOptions().timeZone;
+
+  var sundayStart = (q.get('weekstart') || 'mon').toLowerCase() === 'sun';
+  var VALID = ['day', 'week', 'month', 'year'];
+  var show = (q.get('show') || VALID.join(','))
+    .toLowerCase().split(',').map(function(s){ return s.trim(); })
+    .filter(function(s){ return VALID.indexOf(s) >= 0; });
+  if (!show.length) show = VALID.slice();
+
+  var partsFmt = new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, hourCycle: 'h23'
+  });
+
+  var card = document.getElementById('card');
+  var rows = {};
+  show.forEach(function(k){
+    var el = document.createElement('div');
+    el.className = 'row';
+    el.innerHTML = '<div class="head"><span class="name"></span><span class="left"></span>' +
+                   '<span class="pct">0%</span></div><div class="track"><div class="bar"></div></div>';
+    card.appendChild(el);
+    rows[k] = {
+      name: el.querySelector('.name'), left: el.querySelector('.left'),
+      pct: el.querySelector('.pct'), bar: el.querySelector('.bar')
+    };
+    rows[k].name.textContent = k.charAt(0).toUpperCase() + k.slice(1);
+  });
+  var meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = resolvedTz;
+  card.appendChild(meta);
+
+  function civil(){
+    var o = {}, p = partsFmt.formatToParts(new Date());
+    for (var i = 0; i < p.length; i++) if (p[i].type !== 'literal') o[p[i].type] = parseInt(p[i].value, 10);
+    if (o.hour === 24) o.hour = 0;
+    return o;
+  }
+  function daysWord(n){ return n + (n === 1 ? ' day left' : ' days left'); }
+
+  function update(){
+    var c = civil();
+    var dayFrac = (c.hour * 3600 + c.minute * 60 + c.second) / 86400;
+    var dow = new Date(Date.UTC(c.year, c.month - 1, c.day)).getUTCDay(); // 0 = Sunday
+    var wIdx = sundayStart ? dow : (dow + 6) % 7;
+    var dim = new Date(Date.UTC(c.year, c.month, 0)).getUTCDate();
+    var doy = Math.round((Date.UTC(c.year, c.month - 1, c.day) - Date.UTC(c.year, 0, 1)) / 86400000) + 1;
+    var diy = ((c.year % 4 === 0 && c.year % 100 !== 0) || c.year % 400 === 0) ? 366 : 365;
+
+    var data = {
+      day:   { f: dayFrac, left: null },
+      week:  { f: (wIdx + dayFrac) / 7,       left: 7 - wIdx },
+      month: { f: (c.day - 1 + dayFrac) / dim, left: dim - c.day + 1 },
+      year:  { f: (doy - 1 + dayFrac) / diy,   left: diy - doy + 1 }
+    };
+    var minsLeft = Math.round((1 - dayFrac) * 1440);
+    data.day.text = minsLeft >= 60 ? Math.floor(minsLeft / 60) + 'h left' : minsLeft + 'm left';
+
+    show.forEach(function(k){
+      var d = data[k], r = rows[k];
+      var f = Math.min(1, Math.max(0, d.f));
+      r.pct.textContent = (f * 100).toFixed(f > 0 && f < 0.01 ? 1 : 0) + '%';
+      r.bar.style.width = (f * 100) + '%';
+      r.left.textContent = d.text || daysWord(d.left);
+    });
+  }
+
+  update();
+  // Align to the next minute boundary, then tick once a minute.
+  setTimeout(function(){ update(); setInterval(update, 60000); }, (60 - new Date().getSeconds()) * 1000);
+})();
+</script>
+</body>
+</html>
