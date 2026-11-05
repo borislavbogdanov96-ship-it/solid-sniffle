@@ -1819,7 +1819,12 @@ $('qualityBtn').textContent = HQ ? 'Quality: high' : 'Quality: fast';
 $('qualityBtn').onclick = () => { try { localStorage.setItem('venue-quality', HQ ? 'low' : 'high'); } catch {} location.reload(); };
 
 const clock = new THREE.Clock();
+if (new URLSearchParams(location.search).has('paused')) state.paused = true; // testing hook
 function tick() {
+  if (!state.paused) tickBody();
+  requestAnimationFrame(tick);
+}
+function tickBody() {
   const dt = Math.min(0.05, clock.getDelta()), now = performance.now();
   stepAnim(now);
   if (state.mode === 'walk') {
@@ -1850,10 +1855,12 @@ function tick() {
   updateSelRing();
   if (composer) composer.render(); else renderer.render(scene, camera);
   updateLabels();
-  requestAnimationFrame(tick);
 }
 tick();
-window.__venue = { Store, state, setMode, setTod, setTool, applyTool, select, camera, controls, TYPES, heightAt, scene, renderer };
+window.__venue = { Store, state, setMode, setTod, setTool, applyTool, select, camera, controls, TYPES, heightAt, scene, renderer,
+  // debug/testing: advance animations and render one frame synchronously
+  frame() { stepAnim(performance.now() + 1e7); tickBody(); },
+};
 </script>
 </body>
 </html>
