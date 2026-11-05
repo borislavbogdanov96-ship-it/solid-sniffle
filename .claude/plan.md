@@ -1,3 +1,21 @@
+# Plan — Invite + RSVP (phase 1 of the audit doc)
+
+Source: Claude Docs "Одит Svatbichka + EventLink и tech stack" (decisions up to 2026-11-05).
+
+## Steps
+- [x] [main] Log decision + plan
+- [x] [main] invite/index.html — public invite + RSVP modal
+- [x] [main] invite/admin.html — +1 allow-list and responses
+- [x] [main] Headless verification with Firebase mock + screenshots
+- [x] [main] Progress/resume, commit, push
+- [ ] [main] PR to main so GitHub Pages serves /invite/
+
+## Needs Bobby & Nikol
+Real content for CONFIG (times, venue + map link, dress code, accommodation,
+gifts, story), RTDB security rules, custom domain.
+
+---
+
 # Plan — Venue 3D planner (2026-11-05)
 
 - [x] [main] Model venue geography from satellite + drone photo
@@ -9,25 +27,5 @@
 
 ---
 
-# Plan — Budget & Expenses Tracker
-
-Source spec: `budgettrackerspec.en.md` (uploaded 2026-09-03).
-
-## Scope
-A new **Budget** tab in the existing wedding tracker (`index.html`) covering:
-budget settings, categories with planned amounts, expenses with fixed or
-per-unit pricing, multi-payment tracking, and overspend indicators.
-
-## Steps
-- [x] [main] Budget CSS tokens and component styles (bars, segmented toggle, dark mode)
-- [x] [main] Budget nav tab, section shell, expense + category modals
-- [x] [main] Data layer — RTDB refs, seed categories, shared total/paid utilities
-- [x] [main] Dashboard + category list rendering
-- [x] [main] Expense and category CRUD
-- [x] [main] Acceptance-criteria verification in a headless browser
-- [x] [main] Multiple budget builds: scenarios, duplication, main plan, comparison
-- [ ] [main] Live verification by Bobby against the real Firebase room
-
-## Out of scope (per spec §6)
-Multi-currency, Google Sheets import, per-payer breakdown, due-date
-notifications, PDF/Excel export.
+## Carried over (budget plan)
+- [ ] [main] Live verification of Budget tab by Bobby against the real Firebase room

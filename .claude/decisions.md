@@ -4,6 +4,39 @@ Append-only, newest first. A reversal links to the entry it supersedes.
 
 ---
 
+## 2026-11-05 — Invite + RSVP: standalone pages on the existing RTDB, no Cloud Function
+
+**Decision.** The public invite is `invite/index.html` and its admin is
+`invite/admin.html`, both vanilla single files on the same Firebase Realtime DB
+the tracker uses, under a separate path `invites/<inviteId>/` (not the tracker's
+room path). The +1 check is done without a Cloud Function: the admin publishes
+`plusOne/<sha256(salt + normalised name)> = true`; the invite hashes the typed
+name and reads that one key.
+
+**Why.** The audit doc (Claude Docs, "Одит Svatbichka + EventLink и tech stack")
+recommended React + Firestore + Cloud Functions, but the app is single-file
+vanilla + RTDB (see 2026-09-03 entry). Functions need the Blaze plan and a deploy
+pipeline this repo does not have. Hashing keeps guest names out of the public
+page; a separate path keeps the tracker's room id out of the public invite.
+
+**Doc decisions implemented.** Bulgarian only; one shared link; modal with
+"Име и Фамилия" + radio "Ще присъствам"/"Няма да мога"; on attend: menu
+(Стандартно / Вегетарианско), kids count, +1 (name + menu) only for allowed
+guests; matching ignores case and accepts Cyrillic or Latin via the official
+Bulgarian transliteration; unofficial spellings and nicknames go to
+"Несвързани".
+
+**Consequences accepted.**
+- Security relies on RTDB rules, which are not in this repo. Until rules make
+  `responses` write-only and `plusOne` readable per key only, anyone with the DB
+  URL can read responses. Flagged to Bobby.
+- Hashed names are guessable by brute force over common names; acceptable for a
+  +1 flag, not for secrets.
+- Unknown content (times, venue, dress code, accommodation, gifts) is draft text
+  in a CONFIG block, shown with a "Чернова" strip until `draft: false`.
+
+---
+
 ## 2026-11-05 — Venue 3D planner is a separate page, modelled not photographed
 
 **Decision.** The venue map lives in its own file, `venue.html` (Three.js from
