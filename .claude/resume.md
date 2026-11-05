@@ -14,6 +14,9 @@ venue planner for Bedouin Forest Residence, sharing the Firebase room.
 "walk through the day" tour, decoration items, ground drawing, day/golden/night.
 
 ## Next Session
+- Assign places to the draft moments (ceremony: forest vs waterfalls; welcome
+  drink: courtyard vs forest; dinner: lawn vs forest slab). Party/first dance and
+  end of night are missing from the draft.
 - Bobby & Nikol open `venue.html` live and correct pin positions (they are
   guesses from the satellite + drone photo).
 - Videos of the venue were not accessible from the cloud session — if wanted,

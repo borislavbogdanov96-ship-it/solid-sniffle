@@ -1,5 +1,17 @@
 # Progress — solid-sniffle
 
+## 2026-11-05 (later) — Draft programme + photo-based detail
+
+- "The day" now holds Bobby & Nikol's draft programme (12 moments, BG text,
+  start–end times, notes). Places left empty where the draft doesn't decide.
+  The old placeholder schedule is replaced automatically only if untouched.
+- Model refined from 5 walk-through photos: stone lodge with glass front and
+  dark plank hipped roof + chimney, parasols, string lights to lawn poles, log
+  fire pit with log benches, thuja row, round gazebo, two caravans, gravel path,
+  beech wood with leaf litter and stone edging around the forest slab.
+- Verified in headless Chromium: migration old→new schedule, walk views of
+  lawn / beech path / caravans, no page errors.
+
 ## 2026-11-05 — Venue 3D planner
 
 New `venue.html`: interactive 3D model of Bedouin Forest Residence (Rositsa

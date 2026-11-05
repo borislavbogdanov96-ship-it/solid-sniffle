@@ -11,3 +11,4 @@ date	type	metric	value	status
 2026-09-03	build	scenario checks passing	17/17	done
 2026-09-03	build	acceptance + regression after scenarios	32/32	done
 2026-11-05	build	venue 3D planner (venue.html) smoke test in headless Chromium	bird/walk/night/tour/draw ok	done
+2026-11-05	build	venue: draft programme + photo detail	12 moments; walk views ok	done
