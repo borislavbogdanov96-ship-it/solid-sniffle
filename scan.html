@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>Venue Scans — Bedouin Forest Residence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
+} }
+</script>
+<style>
+  :root { --primary: oklch(0.442 0.125 145); --surface: oklch(0.984 0.003 80 / 0.94); --border: oklch(0.885 0.008 80);
+    --text: oklch(0.255 0.010 80); --muted: oklch(0.520 0.010 80); --shadow: 0 10px 30px -12px rgb(30 25 15 / .35); }
+  @media (prefers-color-scheme: dark) { :root { --primary: oklch(0.720 0.130 145); --surface: oklch(0.215 0.004 80 / 0.94);
+    --border: oklch(0.330 0.004 80); --text: oklch(0.930 0.004 80); --muted: oklch(0.680 0.006 80); } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8dc; color: var(--text); font: 14px/1.4 Inter, system-ui, sans-serif; }
+  #view { position: fixed; inset: 0; }
+  #view canvas { touch-action: none; }
+  .bar { position: fixed; z-index: 10; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; pointer-events: none; }
+  .bar > * { pointer-events: auto; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; }
+  .brand a { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--text); text-decoration: none; background: rgb(0 0 0 / .06); }
+  .brand b { font-family: 'Cormorant Garamond', serif; font-size: 19px; display: block; line-height: 1.05; }
+  .brand span { font-size: 11px; color: var(--muted); }
+  .seg { display: flex; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+  .seg button { border: 0; background: transparent; padding: 7px 11px; border-radius: 10px; font: 600 12.5px Inter, sans-serif; color: var(--muted); min-height: 36px; white-space: nowrap; cursor: pointer; }
+  .seg button.on { background: var(--primary); color: #fff; }
+  #help { position: fixed; z-index: 10; left: 10px; bottom: 10px; padding: 8px 12px; font-size: 11.5px; color: var(--muted); max-width: 340px; }
+  #help b { color: var(--text); }
+  #status { position: fixed; z-index: 10; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 12px 16px; font-weight: 600; display: none; }
+  #status.show { display: block; }
+  @media (max-width: 760px) { .brand span, #help { display: none; } .seg button { padding: 6px 8px; font-size: 11.5px; } }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<header class="bar">
+  <div class="card brand">
+    <a href="venue.html" aria-label="Back to the venue map" title="Back to the venue map">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <div><b>Venue scans</b><span>Real 3D captures from your videos</span></div>
+  </div>
+  <div class="card seg" id="scanSeg"></div>
+  <div class="card seg" id="viewSeg">
+    <button data-v="eye" class="on">Eye level</button>
+    <button data-v="over">Overview</button>
+  </div>
+</header>
+<div id="status" class="card"></div>
+<div id="help" class="card"><b>Drag</b> to look around · <b>right-drag / two fingers</b> to move · <b>scroll / pinch</b> to zoom · <b>WASD</b> to walk</div>
+
+<script type="module">
+import * as THREE from 'three';
+import * as GS from '@mkkellogg/gaussian-splats-3d';
+
+// Scans exported from KIRI Engine (3DGS), pruned and compressed to .ksplat.
+// Scene units are the scan's own (not metres); +y points DOWN in these captures.
+// `c` = centre on the ground, `e` = rough size — used for the starting camera.
+const SCANS = [
+  { id: 1, name: 'Scan 1', c: [-0.53, 0.35, 0.36],  e: 11 },
+  { id: 2, name: 'Scan 2', c: [-0.31, 0.93, 0.51],  e: 9.3 },
+  { id: 3, name: 'Scan 3', c: [1.24, 1.52, 0.26],   e: 17 },
+  { id: 4, name: 'Scan 4', c: [0.15, 0.77, -0.08],  e: 10.5 },
+  { id: 5, name: 'Scan 5', c: [0.1, 1.12, -3.09],   e: 13.6 },
+  { id: 6, name: 'Scan 6', c: [5.7, 0.42, 6.46],    e: 18 },
+  { id: 7, name: 'Scan 7', c: [-1.18, 0.54, -1.31], e: 7.3 },
+];
+const params = new URLSearchParams(location.search);
+let current = SCANS.find(s => String(s.id) === params.get('s')) || SCANS[3];
+let viewer = null, loading = false;
+const status = document.getElementById('status');
+const seg = document.getElementById('scanSeg');
+seg.innerHTML = SCANS.map(s => `<button data-id="${s.id}">${s.name}</button>`).join('');
+seg.querySelectorAll('button').forEach(b => b.onclick = () => open(SCANS.find(s => s.id === +b.dataset.id)));
+document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v));
+
+function camFor(s, v) {
+  const [x, g, z] = s.c, e = s.e;
+  const look = [x, g - e * 0.06, z];
+  if (v === 'eye') return { pos: [x, g - e * 0.09, z + e * 0.32], look: [x, g - e * 0.09, z - e * 0.2] };
+  return { pos: [x, g - e * 0.28, z + e * 0.62], look };
+}
+function setView(v) {
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  if (!viewer) return;
+  const { pos, look } = camFor(current, v);
+  viewer.camera.position.set(...pos);
+  viewer.controls.target.set(...look);
+  viewer.controls.update();
+}
+async function open(s) {
+  if (loading) return;
+  loading = true; current = s;
+  history.replaceState(null, '', '?s=' + s.id);
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.id === s.id));
+  if (viewer) { try { await viewer.dispose(); } catch {} viewer = null; document.getElementById('view').innerHTML = ''; }
+  const { pos, look } = camFor(s, 'eye');
+  viewer = new GS.Viewer({
+    rootElement: document.getElementById('view'),
+    cameraUp: [0, -1, 0],
+    initialCameraPosition: pos,
+    initialCameraLookAt: look,
+    sharedMemoryForWorkers: false,   // GitHub Pages is not cross-origin isolated
+    sphericalHarmonicsDegree: 0,
+    antialiased: true,
+    dynamicScene: false,
+    logLevel: GS.LogLevel.None,
+  });
+  window.__viewer = viewer;
+  status.textContent = 'Loading ' + s.name + '…'; status.classList.add('show');
+  try {
+    await viewer.addSplatScene(`venue-scans/scan-${s.id}.ksplat`, { showLoadingUI: true, progressiveLoad: false, splatAlphaRemovalThreshold: 8 });
+    viewer.start();
+    status.classList.remove('show');
+    setView('eye');
+  } catch (err) {
+    status.textContent = 'Could not load this scan: ' + (err && err.message || err);
+  }
+  loading = false;
+}
+
+// WASD / arrows: walk the camera and its target together
+const keys = {};
+addEventListener('keydown', e => { keys[e.code] = true; });
+addEventListener('keyup', e => { keys[e.code] = false; });
+let last = performance.now();
+(function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (viewer && viewer.camera) {
+    const f = (keys.KeyW || keys.ArrowUp ? 1 : 0) - (keys.KeyS || keys.ArrowDown ? 1 : 0);
+    const r = (keys.KeyD || keys.ArrowRight ? 1 : 0) - (keys.KeyA || keys.ArrowLeft ? 1 : 0);
+    if (f || r) {
+      const cam = viewer.camera, up = new THREE.Vector3(0, -1, 0);
+      const fwd = new THREE.Vector3(); cam.getWorldDirection(fwd); fwd.addScaledVector(up, -fwd.dot(up)).normalize();
+      const right = new THREE.Vector3().crossVectors(fwd, up).normalize();
+      const step = new THREE.Vector3().addScaledVector(fwd, f).addScaledVector(right, r).multiplyScalar(current.e * 0.12 * dt * (keys.ShiftLeft ? 3 : 1));
+      cam.position.add(step); viewer.controls.target.add(step);
+    }
+  }
+  requestAnimationFrame(loop);
+})(last);
+
+open(current);
+</script>
+</body>
+</html>
