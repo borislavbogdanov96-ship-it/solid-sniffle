@@ -4,6 +4,26 @@ Append-only, newest first. A reversal links to the entry it supersedes.
 
 ---
 
+## 2026-11-05 — Venue 3D planner is a separate page, modelled not photographed
+
+**Decision.** The venue map lives in its own file, `venue.html` (Three.js from
+CDN, no build step), linked from the tracker's nav. It is a stylised 3D model
+traced from the Google satellite screenshot (~0.25 m/px) and the venue's
+annotated drone photo — not photo-real Street View. Data syncs through the same
+Firebase room under `venue/` (zones, moments, items, strokes), falling back to
+localStorage when Firebase is unreachable.
+
+**Why.** Adding a WebGL scene to the 144 KB `index.html` would bloat every load
+of the tracker. Real Street View imagery does not exist for the venue grounds,
+and the Google screenshot is not committed (licensing) — the couple can load it
+locally as a ground overlay to check alignment.
+
+**Open.** The owner's "Videos of the place" folder was not reachable from the
+cloud session, so the videos were not used. Place positions are best guesses
+and are draggable in the app.
+
+---
+
 ## 2026-09-03 — Multiple budgets are independent copies, with one marked "main"
 
 **Decision.** A budget scenario is a self-contained set of categories and

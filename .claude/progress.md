@@ -1,5 +1,42 @@
 # Progress — solid-sniffle
 
+## 2026-11-05 (later) — Draft programme + photo-based detail
+
+- "The day" now holds Bobby & Nikol's draft programme (12 moments, BG text,
+  start–end times, notes). Places left empty where the draft doesn't decide.
+  The old placeholder schedule is replaced automatically only if untouched.
+- Model refined from 5 walk-through photos: stone lodge with glass front and
+  dark plank hipped roof + chimney, parasols, string lights to lawn poles, log
+  fire pit with log benches, thuja row, round gazebo, two caravans, gravel path,
+  beech wood with leaf litter and stone edging around the forest slab.
+- Verified in headless Chromium: migration old→new schedule, walk views of
+  lawn / beech path / caravans, no page errors.
+
+## 2026-11-05 — Venue 3D planner
+
+New `venue.html`: interactive 3D model of Bedouin Forest Residence (Rositsa
+river, road, lodge, residence, courtyard, lawn, forest slab, meadows, ~8k trees).
+
+**Added**
+- Bird's-eye orbit view and a Walk mode (drag to look, WASD / on-screen
+  joystick, click ground to step there) — Street-View-style.
+- 9 seeded places from the drone photo (BG + EN names), draggable, editable,
+  with coloured areas painted on the ground.
+- "The day": moments (time, name, place, notes) assigned to places; labels on
+  the map show what happens where; "Walk through the day" camera tour.
+- "Decorate": 17 placeable items (arch, 60 seats, aisle, round/long tables,
+  bar, lounge, dance floor, stage, marquee, string lights, lanterns, fire pit,
+  flowers, photo corner, sign with text, note pin) — move, rotate, scale,
+  recolour, label, note, duplicate, delete; freehand drawing on the ground.
+- Day / golden hour / night lighting (lights glow at night).
+- Optional local overlay of the satellite screenshot on the ground.
+- Sync via Firebase room `venue/`; localStorage fallback.
+- "Venue 3D" link in the tracker's desktop toggle and mobile nav.
+
+**Verified** — headless Chromium (SwiftShader, CDNs stubbed with local three
+0.160.0, Firebase blocked → local mode): renders, tour, walk, night, item
+placement, drawing; no page errors. Live Firebase sync not verified here.
+
 ## 2026-09-03 — Multiple budgets with side-by-side comparison
 
 Extended the Budget tab so several budget builds can coexist and be compared.
