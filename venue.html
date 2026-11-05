@@ -526,7 +526,7 @@ const baseCanvas = document.createElement('canvas'); baseCanvas.width = baseCanv
       else if (distPoly(PATH, x, z) < 1.3) { const k = 0.85 + n2 * 0.15; r = 172 * k; g = 162 * k; b = 140 * k; }
       else if (isLawn(x, z)) { r = 96 + n * 40; g = 142 + n * 34; b = 56 + n * 16; }
       else if (isMeadow(x, z)) { r = 168 + n * 30; g = 156 + n * 26; b = 104 + n * 20; }
-      else if (isBeech(x, z)) { r = 112 + n * 40 + n2 * 14; g = 88 + n * 28 + n2 * 10; b = 56 + n * 16; }   // beech leaf litter
+      else if (isBeech(x, z)) { r = 96 + n * 36 + n2 * 12; g = 80 + n * 26 + n2 * 10; b = 56 + n * 16; }   // beech leaf litter
       else { r = 62 + n * 30; g = 68 + n * 28; b = 38 + n * 14; }
       const o = (j * BASE_N + i) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
     }
@@ -741,7 +741,7 @@ scene.add(terrain);
         float sw = sin(uTime * 1.3 + ip.x * 0.07 + ip.z * 0.05) * ${amount} + sin(uTime * 2.9 + ip.x * 0.31 + ip.z * 0.17) * ${amount * 0.35};
         transformed.x += sw * (position.y + 1.0); transformed.z += sw * 0.6 * (position.y + 1.0);`);
   };
-  const barkTex = (() => { const h = tileNoise(128, 4, 5); return texFromPixels(128, k => { const i = k % 128, j = (k / 128) | 0; const v = h[k] * 0.6 + h[(j * 7 % 128) * 128 + i] * 0.4; const t = 120 + v * 110; return [t, t, t]; }, true); })();
+  const barkTex = (() => { const h = tileNoise(128, 4, 5); return texFromPixels(128, k => { const i = k % 128, j = (k / 128) | 0; const v = h[k] * 0.6 + h[(j * 7 % 128) * 128 + i] * 0.4; const t = 95 + v * 120; return [t, t, t]; }, true); })();
   barkTex.repeat.set(2, 6);
   const trunkGeo = new THREE.CylinderGeometry(0.2, 0.34, 1, 10, 1); trunkGeo.translate(0, 0.5, 0);
   const coreGeo = new THREE.IcosahedronGeometry(0.72, 1);
@@ -764,7 +764,7 @@ scene.add(terrain);
     const H = beech ? 17 + hash(x, z * 2) * 8 : 9 + hash(x, z * 2) * 9, y = heightAt(x, z) - 0.3;
     const lift = beech ? 0.22 : 0;
     m4.compose(p.set(x, y, z), q.setFromAxisAngle(p.clone().set(0, 1, 0), hash(x, z) * 6), s.set(beech ? 1.5 : 1.1, H * (0.5 + lift), beech ? 1.5 : 1.1)); trunks.setMatrixAt(i, m4);
-    trunks.setColorAt(i, col.setHex(beech ? 0x9a978c : 0x6a5a48));
+    trunks.setColorAt(i, col.setHex(beech ? 0x77746a : 0x5a4a3a));
     const R = H * (beech ? 0.21 : 0.19 + hash(z, x * 2) * 0.07);
     for (let k = 0; k < 2; k++) {
       const ox = (hash(x + k, z) - 0.5) * R * 0.7, oz = (hash(x, z + k) - 0.5) * R * 0.7;
@@ -1524,7 +1524,7 @@ if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch'
 const TOD = {
   day:    { elev: 56, az: -35,  turb: 5,  ray: 1.2, fog: 0xc3d3de, hemi: [0xdfeeff, 0x4a5a2a, 0.3],  sun: [0xfff3e2, 2.9], glow: 0.4, flame: 0.6, exp: 0.85, bloom: [0.12, 0.95], lights: 0 },
   golden: { elev: 5,  az: -112, turb: 9,  ray: 2.8, fog: 0xd6b391, hemi: [0xffd2a0, 0x4a3a28, 0.3],  sun: [0xffa257, 2.6], glow: 1.6, flame: 1.6, exp: 0.95, bloom: [0.3, 0.85],  lights: 6 },
-  night:  { elev: 38, az: 60,   turb: 2,  ray: 0.4, fog: 0x0b1324, hemi: [0x3a4a7a, 0x0a0c12, 0.32], sun: [0x9fb2ff, 0.35], glow: 7, flame: 6, exp: 1.0, bloom: [0.85, 0.5], lights: 30, night: true },
+  night:  { elev: 38, az: 60,   turb: 2,  ray: 0.4, fog: 0x0b1324, hemi: [0x3a4a7a, 0x0a0c12, 0.32], sun: [0x9fb2ff, 0.35], glow: 3.2, flame: 3, exp: 1.0, bloom: [0.45, 0.72], lights: 30, night: true },
 };
 let bloomPass = null;
 function setTod(k) {
