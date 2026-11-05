@@ -15,3 +15,4 @@ date	type	metric	value	status
 2026-11-05	build	venue hi-fi rendering merged (PR #5)	6 views rendered, no errors	done
 2026-11-05	build	invite + RSVP e2e checks passing	36/36	done
 2026-11-05	build	venue real scans: 7 KIRI 3DGS -> ksplat, scan.html viewer	1.3 GB -> 116 MB	done
+2026-11-05	build	venue: 7 KIRI meshes -> ground-N.glb (180 MB -> 0.5 MB), walk in scan.html, scans placed in venue.html	walk + placement checks ok; on-device render unverified	done
