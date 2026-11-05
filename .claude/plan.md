@@ -1,3 +1,14 @@
+# Plan — Venue 3D planner (2026-11-05)
+
+- [x] [main] Model venue geography from satellite + drone photo
+- [x] [main] Bird's-eye + walk camera modes
+- [x] [main] Places, day moments, tour
+- [x] [main] Decoration items + ground drawing, Firebase sync
+- [x] [main] Headless smoke test
+- [ ] [main] Live check by Bobby & Nikol; correct pin positions
+
+---
+
 # Plan — Budget & Expenses Tracker
 
 Source spec: `budgettrackerspec.en.md` (uploaded 2026-09-03).

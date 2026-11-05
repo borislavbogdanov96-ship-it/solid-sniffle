@@ -592,6 +592,7 @@
             <button id="btn-list"     onclick="setView('list')"     class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Tasks</button>
             <button id="btn-timeline" onclick="setView('timeline')" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Timeline</button>
             <button id="btn-budget"   onclick="setView('budget')"   class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all">Budget</button>
+            <a href="venue.html" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition-all text-slate-500">Venue 3D</a>
           </div>
           <!-- Desktop add -->
           <button onclick="addForView()" class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-white text-xs font-bold rounded-full transition-all shadow-sm" style="background:var(--primary)" aria-label="Add">
@@ -697,6 +698,12 @@
       </svg>
       <span>Budget</span>
     </button>
+    <a class="nav-tab" href="venue.html" aria-label="Venue 3D">
+      <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+      </svg>
+      <span>Venue</span>
+    </a>
   </nav>
 
   <!-- FAB (mobile only) -->
