@@ -104,3 +104,12 @@ with a shim covering only the display utilities the logic depends on.
 
 **Next** — Bobby opens the Budget tab against the real Firebase room and confirms
 the seed data and layout look right.
+
+
+## 2026-11-05 — Invite + RSVP (phase 1)
+- Built `invite/index.html` (public, Bulgarian): hero with countdown, letter, programme timeline, venue + maps link + .ics, details, RSVP band, OG preview image (`invite/og.png`).
+- RSVP modal implements every doc decision: name, attend/decline radios, menu (Стандартно/Вегетарианско), kids count, +1 only for allowed guests via hashed-name lookup; draft persists across reloads; failure keeps answers.
+- Built `invite/admin.html`: live counts (people, menus, kids, declines), latest-reply-per-person table, CSV export, +1 allow-list.
+- `invite/name-key.js`: shared normalisation (case-insensitive, official BG transliteration) + SHA-256 hash.
+- Headless e2e with a localStorage Firebase mock: 36/36. Bugs fixed during verification: admin grid overflow on mobile, draft overwritten on load, nested choice spans on mobile, menu label overflow at 390px, timeline dot overlap, informal "ти" in success copy.
+- Not verified: real Firebase writes (sandbox proxy blocks Firebase hosts) and RTDB security rules (not in repo).
