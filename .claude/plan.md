@@ -8,7 +8,7 @@ Source: Claude Docs "Одит Svatbichka + EventLink и tech stack" (decisions u
 - [x] [main] invite/admin.html — +1 allow-list and responses
 - [x] [main] Headless verification with Firebase mock + screenshots
 - [x] [main] Progress/resume, commit, push
-- [ ] [main] PR to main so GitHub Pages serves /invite/
+- [x] [main] PR #6 merged; Pages deployed /invite/ (2026-11-05)
 
 ## Needs Bobby & Nikol
 Real content for CONFIG (times, venue + map link, dress code, accommodation,

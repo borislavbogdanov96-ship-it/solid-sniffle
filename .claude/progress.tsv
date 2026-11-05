@@ -13,3 +13,4 @@ date	type	metric	value	status
 2026-11-05	build	venue 3D planner (venue.html) smoke test in headless Chromium	bird/walk/night/tour/draw ok	done
 2026-11-05	build	venue: draft programme + photo detail	12 moments; walk views ok	done
 2026-11-05	build	invite + RSVP e2e checks passing	36/36	done
+2026-11-05	deploy	invite live on GitHub Pages (PR #6)	pages run 42101294132 success	done
