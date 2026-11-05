@@ -30,10 +30,13 @@ Invite:
 - Send one real test reply on the deployed page, then delete it.
 - Custom domain: update absolute `og:image` / `og:url`.
 Venue:
+- Check `scan.html` (7 real Gaussian-splat scans, 116 MB .ksplat in `venue-scans/`) on a real
+  device: starting camera per scan, which scan shows which place, then name them.
+- Set the Drive folder wedding/venue/beduin/3D back to Restricted (shared by link for download).
+- Check venue.html frame rate on laptop and phone; Quality: fast if it stutters.
 - Assign places to the draft moments (ceremony: forest vs waterfalls; welcome drink: courtyard vs
   forest; dinner: lawn vs forest slab). Party/first dance and end of night are missing.
-- Bobby & Nikol open `venue.html` live and correct pin positions (guesses from satellite + drone photo).
-- Venue videos were not reachable from the cloud session — upload stills to refine.
+- Correct pin positions on `venue.html` (guesses from satellite + drone photo).
 
 ## Open Questions
 - Budget tab live check, acceptance-suite commit, auth — still open.

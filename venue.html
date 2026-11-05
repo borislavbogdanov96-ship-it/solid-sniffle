@@ -1627,6 +1627,10 @@ function renderPlaces() {
         <button class="btn sm" data-fly>Fly</button><button class="btn sm" data-walk>Stand</button></div>`; }).join('')}
     <div class="row" style="margin-top:10px"><button class="btn ${state.tool === 'zone' ? 'on' : ''}" id="addZone">+ Add a place</button></div>
     <hr>
+    <div class="grp">Real 3D scans</div>
+    <p class="sub">Photo-real scans made from your videos. Opens a separate viewer.</p>
+    <div class="row" style="flex-wrap:wrap">${[1, 2, 3, 4, 5, 6, 7].map(n => `<a class="btn sm" href="scan.html?s=${n}" style="text-decoration:none">Scan ${n}</a>`).join('')}</div>
+    <hr>
     <div class="grp">Reference photo</div>
     <p class="sub">Load the Google satellite screenshot (2000 × 1151) to lay it over the ground and check the layout. It stays on this device only.</p>
     <div class="row"><button class="btn" id="ovLoad">${overlayImg ? 'Replace image' : 'Load image'}</button>${overlayImg ? `<button class="btn" id="ovClear">Remove</button>` : ''}</div>
