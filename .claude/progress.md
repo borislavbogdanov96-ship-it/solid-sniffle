@@ -1,5 +1,12 @@
 # Progress — solid-sniffle
 
+## 2026-11-05 (later) — Venue 3D: higher-fidelity rendering (option C), merged in PR #5
+
+Physical sky + IBL, distant hills, leaf-card trees with wind, instanced grass
+(masked under floors/drawings), reflective river, detail textures, night stars,
+bloom and point lights; quality toggle (high desktop / fast phones). Verified by
+single-frame headless renders (no GPU); real-device FPS not measured.
+
 ## 2026-11-05 (later) — Draft programme + photo-based detail
 
 - "The day" now holds Bobby & Nikol's draft programme (12 moments, BG text,

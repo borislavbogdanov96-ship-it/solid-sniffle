@@ -14,6 +14,8 @@ venue planner for Bedouin Forest Residence, sharing the Firebase room.
 "walk through the day" tour, decoration items, ground drawing, day/golden/night.
 
 ## Next Session
+- Check venue.html frame rate on Bobby's laptop and phone; use Quality: fast if it stutters.
+- Option A (Gaussian-splat scan of the venue) is the path to photo-real — waiting on capture/scan file.
 - Assign places to the draft moments (ceremony: forest vs waterfalls; welcome
   drink: courtyard vs forest; dinner: lawn vs forest slab). Party/first dance and
   end of night are missing from the draft.
