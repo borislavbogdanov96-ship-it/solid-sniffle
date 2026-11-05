@@ -1,0 +1,1866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>Venue 3D — Bedouin Forest Residence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+} }
+</script>
+<style>
+  :root {
+    --primary: oklch(0.442 0.125 145);
+    --primary-subtle: oklch(0.957 0.022 146);
+    --bg: oklch(0.965 0.006 80);
+    --surface: oklch(0.984 0.003 80 / 0.96);
+    --surface-solid: oklch(0.984 0.003 80);
+    --recessed: oklch(0.944 0.006 80);
+    --border: oklch(0.885 0.008 80);
+    --text: oklch(0.255 0.010 80);
+    --muted: oklch(0.520 0.010 80);
+    --danger: oklch(0.560 0.170 28);
+    --shadow: 0 10px 30px -12px rgb(30 25 15 / 0.35), 0 2px 6px -2px rgb(30 25 15 / 0.15);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --primary: oklch(0.720 0.130 145);
+      --primary-subtle: oklch(0.300 0.040 146);
+      --bg: oklch(0.180 0.004 80);
+      --surface: oklch(0.215 0.004 80 / 0.95);
+      --surface-solid: oklch(0.215 0.004 80);
+      --recessed: oklch(0.260 0.004 80);
+      --border: oklch(0.330 0.004 80);
+      --text: oklch(0.930 0.004 80);
+      --muted: oklch(0.680 0.006 80);
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text);
+    font: 14px/1.4 Inter, system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  #stage { position: fixed; inset: 0; }
+  #c { width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
+  #labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .lbl { position: absolute; left: 0; top: 0; white-space: nowrap; pointer-events: auto; cursor: pointer;
+    transform-origin: 0 0; will-change: transform; }
+  .lbl .in { transform: translate(-50%, -100%); background: var(--surface); border: 1px solid var(--border);
+    border-left: 4px solid var(--c, var(--primary)); border-radius: 8px; padding: 3px 8px 4px; box-shadow: var(--shadow);
+    font-size: 12px; font-weight: 600; line-height: 1.25; }
+  .lbl .bg { display: block; font-size: 10.5px; font-weight: 500; color: var(--muted); }
+  .lbl .mo { display: block; font-size: 10.5px; font-weight: 600; color: var(--c, var(--primary)); }
+  .lbl.item .in { border-left-width: 1px; border-radius: 999px; font-weight: 500; font-size: 11px; padding: 2px 8px; }
+  .lbl.sel .in { outline: 2px solid var(--primary); }
+
+  /* top bar */
+  .topbar { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; gap: 8px;
+    align-items: center; flex-wrap: wrap; pointer-events: none; z-index: 20; }
+  .topbar > * { pointer-events: auto; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; }
+  .brand a { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--text);
+    text-decoration: none; background: var(--recessed); }
+  .brand b { font-family: 'Cormorant Garamond', serif; font-size: 19px; font-weight: 700; display: block; line-height: 1.05; }
+  .brand span { font-size: 11px; color: var(--muted); }
+  .seg { display: flex; padding: 3px; gap: 2px; }
+  .seg button { border: 0; background: transparent; padding: 7px 11px; border-radius: 10px; font-size: 12.5px; font-weight: 600;
+    color: var(--muted); min-height: 36px; transition: background .2s var(--ease), color .2s; }
+  .seg button.on { background: var(--primary); color: white; }
+  #sync { font-size: 11.5px; font-weight: 600; padding: 7px 10px; color: var(--muted); }
+  #sync.ok { color: var(--primary); }
+  #qualityBtn { border: 1px solid var(--border); font-size: 11.5px; font-weight: 600; padding: 7px 10px; color: var(--muted); min-height: 34px; }
+
+  /* side panel */
+  #panel { position: fixed; z-index: 15; right: 10px; top: 70px; bottom: 10px; width: 360px; display: flex; flex-direction: column; overflow: hidden; }
+  .tabs { display: flex; gap: 2px; padding: 4px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  .tabs button { flex: 1; border: 0; background: transparent; padding: 9px 6px; border-radius: 10px; font-weight: 600; font-size: 13px; color: var(--muted); }
+  .tabs button.on { background: var(--primary-subtle); color: var(--primary); }
+  .tabs .toggle { flex: 0 0 40px; display: none; }
+  .body { overflow-y: auto; padding: 12px; flex: 1; }
+  .body h3 { font-family: 'Cormorant Garamond', serif; font-size: 18px; margin: 4px 0 6px; }
+  .body p.sub { margin: 0 0 10px; color: var(--muted); font-size: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .btn { border: 1px solid var(--border); background: var(--surface-solid); padding: 7px 11px; border-radius: 10px; font-weight: 600; font-size: 12.5px; min-height: 34px; }
+  .btn:hover { border-color: var(--primary); }
+  .btn.pri { background: var(--primary); color: #fff; border-color: transparent; }
+  .btn.danger { color: var(--danger); }
+  .btn.sm { padding: 4px 8px; min-height: 28px; font-size: 11.5px; }
+  .btn.on { background: var(--primary-subtle); border-color: var(--primary); color: var(--primary); }
+  input[type=text], input[type=time], select, textarea { border: 1px solid var(--border); background: var(--surface-solid); border-radius: 8px; padding: 6px 8px; width: 100%; min-height: 32px; }
+  textarea { resize: vertical; min-height: 44px; font-size: 12.5px; }
+  .moment { border: 1px solid var(--border); border-left: 4px solid var(--c, var(--border)); border-radius: 12px; padding: 8px; margin-bottom: 8px; background: var(--surface-solid); }
+  .moment .row + .row, .moment .row + textarea { margin-top: 6px; }
+  .moment input[type=time] { flex: 1; min-width: 0; }
+  .moment .dash { color: var(--muted); }
+  .x { border: 0; background: transparent; color: var(--muted); width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0; font-size: 16px; }
+  .x:hover { background: var(--recessed); color: var(--danger); }
+  .zone { display: flex; align-items: center; gap: 8px; padding: 8px; border-radius: 10px; border: 1px solid transparent; }
+  .zone:hover { border-color: var(--border); background: var(--surface-solid); }
+  .dot { width: 12px; height: 12px; border-radius: 4px; flex-shrink: 0; background: var(--c); }
+  .zone .nm { flex: 1; min-width: 0; }
+  .zone .nm b { display: block; font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .zone .nm small { color: var(--muted); font-size: 11px; display: block; }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
+  .chip { font-size: 10.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--primary-subtle); color: var(--primary); }
+  .palette { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 12px; }
+  .palette button { border: 1px solid var(--border); background: var(--surface-solid); border-radius: 10px; padding: 8px 4px 7px; font-size: 11.5px; font-weight: 600; line-height: 1.2; min-height: 54px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .palette button i { width: 18px; height: 18px; border-radius: 5px; background: var(--c); display: block; border: 1px solid rgb(0 0 0 / .12); }
+  .palette button.on { border-color: var(--primary); background: var(--primary-subtle); color: var(--primary); }
+  .grp { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 12px 0 6px; }
+  .swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+  .swatches button { width: 28px; height: 28px; border-radius: 8px; border: 2px solid transparent; background: var(--c); }
+  .swatches button.on { border-color: var(--text); }
+  .list-item { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; font-size: 12.5px; cursor: pointer; }
+  .list-item:hover { background: var(--recessed); }
+  .list-item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  hr { border: 0; border-top: 1px solid var(--border); margin: 14px 0; }
+  label.f { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin: 8px 0 3px; }
+
+  #hint { position: fixed; z-index: 25; top: 74px; left: 50%; transform: translateX(-50%); padding: 8px 14px; font-weight: 600; font-size: 12.5px; display: none; gap: 10px; align-items: center; }
+  #hint.show { display: flex; }
+  #inspector { position: fixed; z-index: 18; left: 10px; bottom: 10px; width: 300px; padding: 12px; display: none; }
+  #inspector.show { display: block; }
+  #inspector h4 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  #inspector .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px; }
+  #help { position: fixed; z-index: 10; left: 10px; bottom: 10px; padding: 8px 12px; font-size: 11.5px; color: var(--muted); max-width: 300px; }
+  #help b { color: var(--text); }
+  #tour { position: fixed; z-index: 30; left: 50%; bottom: 24px; transform: translateX(-50%); padding: 12px 14px; display: none; align-items: center; gap: 14px; min-width: 300px; }
+  #tour.show { display: flex; }
+  #tour .t { font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: var(--primary); }
+  #tour .d b { display: block; font-size: 15px; }
+  #tour .d small { color: var(--muted); }
+  #joy { position: fixed; z-index: 16; left: 22px; bottom: 26px; width: 120px; height: 120px; border-radius: 50%; display: none;
+    background: rgb(255 255 255 / .22); border: 2px solid rgb(255 255 255 / .55); touch-action: none; backdrop-filter: blur(6px); }
+  #joy .knob { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: rgb(255 255 255 / .85); box-shadow: var(--shadow); }
+  body.walk.touch #joy { display: block; }
+  body.walk.touch #help { display: none; }
+  #loading { position: fixed; inset: 0; display: grid; place-items: center; z-index: 50; background: var(--bg); font-family: 'Cormorant Garamond', serif; font-size: 22px; transition: opacity .5s; }
+  #loading.gone { opacity: 0; pointer-events: none; }
+  #crosshair { position: fixed; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: rgb(255 255 255 / .8); box-shadow: 0 0 0 1px rgb(0 0 0 / .3); z-index: 5; display: none; pointer-events: none; }
+  body.walk #crosshair { display: block; }
+
+  @media (max-width: 760px) {
+    .brand span, #help { display: none; }
+    .lbl .bg { display: none; }
+    .lbl .in { font-size: 11px; padding: 2px 6px 3px; }
+    .brand b { font-size: 16px; }
+    .seg button { padding: 6px 8px; font-size: 11.5px; }
+    #panel { left: 0; right: 0; bottom: 0; top: auto; width: auto; height: 50px; border-radius: 16px 16px 0 0;
+      padding-bottom: env(safe-area-inset-bottom); transition: height .35s var(--ease); }
+    #panel.open { height: 56vh; }
+    .tabs .toggle { display: block; }
+    #inspector { left: 8px; right: 8px; width: auto; bottom: 60px; }
+    body.sheet-open #inspector { bottom: calc(56vh + 8px); }
+    #hint { top: auto; bottom: 62px; }
+    #tour { bottom: 64px; min-width: 0; width: calc(100% - 16px); }
+    #joy { bottom: 72px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div id="loading">Loading the forest…</div>
+<div id="stage"><canvas id="c" tabindex="0"></canvas><div id="labels"></div></div>
+<div id="crosshair"></div>
+
+<header class="topbar">
+  <div class="card brand">
+    <a href="index.html" aria-label="Back to planner" title="Back to planner">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <div><b>Bedouin Forest Residence</b><span>Rositsa river · venue planner</span></div>
+  </div>
+  <div class="card seg" id="modeSeg">
+    <button data-mode="bird" class="on">Bird's-eye</button>
+    <button data-mode="walk">Walk</button>
+  </div>
+  <div class="card seg" id="todSeg">
+    <button data-tod="day" class="on">Day</button>
+    <button data-tod="golden">Golden hour</button>
+    <button data-tod="night">Night</button>
+  </div>
+  <span class="card" id="sync">Connecting…</span>
+  <button class="card" id="qualityBtn" title="Switch rendering quality"></button>
+</header>
+
+<aside id="panel" class="card">
+  <div class="tabs" role="tablist">
+    <button data-tab="plan" class="on">The day</button>
+    <button data-tab="places">Places</button>
+    <button data-tab="sketch">Decorate</button>
+    <button class="toggle" id="sheetToggle" aria-label="Expand panel">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7"/></svg>
+    </button>
+  </div>
+  <div class="body" id="body-plan"></div>
+  <div class="body" id="body-places" hidden></div>
+  <div class="body" id="body-sketch" hidden></div>
+</aside>
+
+<div id="hint" class="card"><span id="hintText"></span><button class="btn sm" id="hintCancel">Done</button></div>
+<div id="inspector" class="card"></div>
+<div id="help" class="card"></div>
+<div id="tour" class="card">
+  <div class="t" id="tourTime"></div>
+  <div class="d" style="flex:1"><b id="tourName"></b><small id="tourZone"></small></div>
+  <button class="btn sm" id="tourNext">Next</button>
+  <button class="btn sm" id="tourStop">Stop</button>
+</div>
+<div id="joy"><div class="knob"></div></div>
+<input type="file" id="overlayFile" accept="image/*" hidden>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { Sky } from 'three/addons/objects/Sky.js';
+import { Water } from 'three/addons/objects/Water.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+// Quality: "high" on desktop (grass, reflective water, leaf cards, bloom, MSAA), "low" on phones. ?q=high|low overrides.
+const QUALITY = (() => {
+  try { const q = new URLSearchParams(location.search).get('q') || localStorage.getItem('venue-quality'); if (q === 'high' || q === 'low') return q; } catch {}
+  return matchMedia('(pointer: coarse)').matches || innerWidth < 760 ? 'low' : 'high';
+})();
+const HQ = QUALITY === 'high';
+const U = { uTime: { value: 0 } }; // shared shader uniforms (wind)
+
+/* ══════════════════════════════════════════════════════════════
+   GEOGRAPHY — world units are metres.
+   Traced from the satellite screenshot (2000×1151 px) at ~0.25 m/px,
+   origin = pixel (1000, 450) ≈ the courtyard. +x east, +z south.
+   All place positions are editable in the app (drag the pins).
+   ══════════════════════════════════════════════════════════════ */
+const PX_SCALE = 0.25, PX_OX = 1000, PX_OY = 450;
+const px = ([X, Y]) => [(X - PX_OX) * PX_SCALE, (Y - PX_OY) * PX_SCALE];
+const RIVER = [[-200,960],[0,880],[250,790],[500,640],[650,575],[740,500],[790,440],[860,390],[960,330],[1100,290],[1250,245],[1450,170],[1650,85],[1720,0],[1800,-80],[2200,-400]].map(px);
+const ROAD  = [[-200,1190],[-100,1120],[0,1050],[130,960],[250,840],[330,800],[450,750],[600,690],[820,580],[1000,495],[1220,395],[1380,330],[1620,215],[1760,140],[1880,0],[1950,-80],[2200,-330]].map(px);
+const MEADOW_E = [[1260,560],[1330,420],[1400,330],[1620,230],[1800,140],[1950,60],[2100,300],[1950,420],[1700,560],[1450,720],[1320,700]].map(px);
+const MEADOW_W = [[60,1060],[150,960],[250,860],[450,770],[600,712],[640,760],[500,850],[330,960],[200,1100],[80,1151]].map(px);
+const ROT = 0.44; // compound buildings follow the road bearing
+// Gravel path from the road past the caravans into the beech wood and the slab (approximate, from the walk-through photos).
+const PATH = [[0, 12], [3, 22], [2, 34], [-10, 48], [-24, 60], [-33, 68]];
+const SLAB = [-39, 72.5];
+const isBeech = (x, z) => Math.hypot(x - SLAB[0], z - SLAB[1]) < 48 || distPoly(PATH, x, z) < 14;
+
+// ground extents
+const G = 600, GX0 = -300, GZ0 = -270;
+
+const smooth = (a, b, v) => { const t = Math.min(1, Math.max(0, (v - a) / (b - a))); return t * t * (3 - 2 * t); };
+function zAt(poly, x) {
+  if (x <= poly[0][0]) return poly[0][1];
+  for (let i = 0; i < poly.length - 1; i++) {
+    const [x0, z0] = poly[i], [x1, z1] = poly[i + 1];
+    if (x <= x1) return z0 + (z1 - z0) * (x - x0) / (x1 - x0);
+  }
+  return poly[poly.length - 1][1];
+}
+function distPoly(poly, x, z) {
+  let best = 1e9;
+  for (let i = 0; i < poly.length - 1; i++) {
+    const [ax, az] = poly[i], [bx, bz] = poly[i + 1];
+    const dx = bx - ax, dz = bz - az;
+    let t = ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz);
+    t = Math.max(0, Math.min(1, t));
+    const ex = ax + dx * t - x, ez = az + dz * t - z;
+    const d = ex * ex + ez * ez;
+    if (d < best) best = d;
+  }
+  return Math.sqrt(best);
+}
+function inPoly(poly, x, z) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function inRect(x, z, cx, cz, w, d, r) {
+  const dx = x - cx, dz = z - cz, c = Math.cos(r), s = Math.sin(r);
+  const lx = dx * c - dz * s, lz = dx * s + dz * c;
+  return Math.abs(lx) <= w / 2 && Math.abs(lz) <= d / 2;
+}
+function hash(x, z) { const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453; return s - Math.floor(s); }
+function vnoise(x, z) {
+  const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const fbm = (x, z) => vnoise(x / 23, z / 23) * 0.6 + vnoise(x / 9, z / 9) * 0.3 + vnoise(x / 3.5, z / 3.5) * 0.1;
+
+const PAVED = [
+  { cx: -14, cz: 1, w: 15, d: 10 },       // courtyard
+  { cx: -39, cz: 72.5, w: 22, d: 16 },    // forest slab
+  { cx: 45, cz: -30, w: 14, d: 10 },      // NE pad
+];
+const LAWNS = [
+  (x, z) => inRect(x, z, 5, -8, 80, 34, ROT),       // compound
+  (x, z) => inRect(x, z, 30, 16, 60, 22, ROT),      // garden across the road
+  (x, z) => Math.hypot(x + 62, z - 92) < 17,        // forest ceremony meadow
+  (x, z) => Math.hypot(x - 45, z + 30) < 10,
+];
+const isPaved = (x, z) => PAVED.some(p => inRect(x, z, p.cx, p.cz, p.w, p.d, ROT));
+const isLawn = (x, z) => LAWNS.some(f => f(x, z));
+const isMeadow = (x, z) => inPoly(MEADOW_E, x, z) || inPoly(MEADOW_W, x, z);
+
+function heightAt(x, z) {
+  const rz = zAt(RIVER, x), dz = zAt(ROAD, x);
+  let h = 0;
+  if (z < rz) h += smooth(0, 130, rz - z) * 38;     // forested north bank
+  if (z > dz) h += smooth(35, 230, z - dz) * 30;    // south slope
+  h += (fbm(x, z) - 0.5) * (0.3 + h * 0.12);
+  const dr = distPoly(RIVER, x, z);
+  if (dr < 7) h -= Math.pow(1 - dr / 7, 0.7) * 1.6;
+  return h;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STORE — Firebase (same room as the planner) with local fallback
+   ══════════════════════════════════════════════════════════════ */
+const ROOM = 'rooms/f3a9b2d7c5414e8f9a6bd012e4f5c783';
+const LOCAL_KEY = 'venue-plan-v1';
+const Store = (() => {
+  let data = {}, ref = null, mode = 'local', loaded = false;
+  const subs = [];
+  const emit = () => { loaded = true; subs.forEach(f => f(data)); };
+  const syncEl = document.getElementById('sync');
+  function local() {
+    mode = 'local';
+    try { data = JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') || {}; } catch { data = {}; }
+    syncEl.textContent = 'Saved on this device'; syncEl.className = 'card';
+    setTimeout(emit, 0);
+  }
+  try {
+    if (!window.firebase) throw new Error('no firebase');
+    if (!firebase.apps.length) firebase.initializeApp({
+      apiKey: "AIzaSyDuKiMP66DZOJZEOVUEHQsuesGwC7gwp9Y",
+      authDomain: "bobby-nikol-wedding.firebaseapp.com",
+      databaseURL: "https://bobby-nikol-wedding-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "bobby-nikol-wedding",
+      storageBucket: "bobby-nikol-wedding.firebasestorage.app",
+      messagingSenderId: "1045458509622",
+      appId: "1:1045458509622:web:febb6eec887acb95991d97"
+    });
+    const db = firebase.database();
+    ref = db.ref(ROOM + '/venue');
+    mode = 'cloud';
+    ref.on('value', s => { data = s.val() || {}; emit(); }, () => { ref = null; local(); });
+    db.ref('.info/connected').on('value', s => {
+      syncEl.textContent = s.val() ? 'Synced' : 'Offline — will sync';
+      syncEl.className = 'card' + (s.val() ? ' ok' : '');
+    });
+    setTimeout(() => { if (!loaded) { ref && ref.off(); ref = null; local(); } }, 8000);
+  } catch { local(); }
+  function setLocal(path, val) {
+    const keys = path.split('/'); let o = data;
+    for (let i = 0; i < keys.length - 1; i++) { o[keys[i]] = o[keys[i]] || {}; o = o[keys[i]]; }
+    if (val === null || val === undefined) delete o[keys[keys.length - 1]]; else o[keys[keys.length - 1]] = JSON.parse(JSON.stringify(val));
+    try { localStorage.setItem(LOCAL_KEY, JSON.stringify(data)); } catch {}
+    emit();
+  }
+  return {
+    get data() { return data; }, get mode() { return mode; },
+    set(path, val) { if (ref) ref.child(path).set(val === undefined ? null : val); else setLocal(path, val); },
+    update(path, obj) { if (ref) ref.child(path).update(obj); else { const cur = path.split('/').reduce((o, k) => (o || {})[k], data) || {}; setLocal(path, { ...cur, ...obj }); } },
+    on(f) { subs.push(f); },
+  };
+})();
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* seed data — positions are best guesses from the annotated drone photo; drag to correct */
+const ZONE_SEED = {
+  residence:      { name: 'Forest Residence',                 bg: 'Горска резиденция',                 x: -30, z: 7.5,  r: 9,  color: '#7a6a55', o: 1 },
+  welcome:        { name: 'Welcome drink — courtyard',        bg: 'Welcome drink',                     x: -14, z: 1,    r: 7,  color: '#c9a227', o: 2 },
+  waterfalls:     { name: 'Ceremony at the waterfalls',       bg: 'Церемония на водопадите',           x: -50, z: -4,   r: 8,  color: '#3f7f9a', o: 3 },
+  cocktail:       { name: 'Cocktail zone after ceremony',     bg: 'Зона за коктейл след церемония',    x: -2,  z: -24,  r: 8,  color: '#b0607a', o: 4 },
+  dinner1:        { name: 'Dinner & party — option 1',        bg: 'Вечеря и парти вариант 1',          x: 22,  z: -9,   r: 13, color: '#5b8a3a', o: 5 },
+  dinner2:        { name: 'Forest dinner & party — option 2', bg: 'Горска зона вечеря и парти вариант 2', x: -39, z: 72.5, r: 12, color: '#8a5a9a', o: 6 },
+  forestCeremony: { name: 'Welcome drink & ceremony in the forest', bg: 'Welcomedrink и Церемония в гората', x: -62, z: 92, r: 12, color: '#2f6b4f', o: 7 },
+  caravans:       { name: 'Caravans',                         bg: 'Каравани',                          x: 8,   z: 26,   r: 8,  color: '#8a8a8a', o: 8 },
+  glamping:       { name: 'Glamping',                         bg: 'Глемпинг',                          x: 50,  z: 20,   r: 12, color: '#a07850', o: 9 },
+};
+// Placeholder schedule from the first version — replaced by the couple's draft below if still untouched.
+const OLD_MOMENT_SEED = {
+  m1: { name: 'Welcome drink', time: '16:00', zone: 'welcome', note: '' },
+  m2: { name: 'Ceremony', time: '16:30', zone: 'forestCeremony', note: '' },
+  m3: { name: 'Cocktail hour', time: '17:15', zone: 'cocktail', note: '' },
+  m4: { name: 'Couple photos', time: '18:00', zone: 'waterfalls', note: '' },
+  m5: { name: 'Dinner', time: '19:30', zone: 'dinner1', note: '' },
+  m6: { name: 'Party', time: '21:30', zone: 'dinner1', note: '' },
+};
+// Bobby & Nikol's draft programme (Nov 2026). Places are left empty where the draft doesn't decide one.
+const MOMENT_SEED = {
+  d01: { name: 'Закуска', time: '09:00', end: '10:00', zone: '', note: '' },
+  d02: { name: 'Грим и прическа', time: '09:00', end: '14:00', zone: '', note: 'Може би имаме за грим наши хора, но за прическа най-вероятно ще искаме контакт от Милица. Само Никол или и други дами да се възползват от фризьор и гримьор?' },
+  d03: { name: 'Welcome drink', time: '15:00', end: '16:00', zone: '', note: 'Стартира някъде 15–16:00, около 1 час продължителност. Опции на мястото: двора или в гората.' },
+  d04: { name: '1st look', time: '15:45', end: '16:00', zone: '', note: '15 мин към края на welcome drink.' },
+  d05: { name: 'Церемония', time: '16:00', end: '16:30', zone: '', note: 'Опции на мястото: в гората или на водопадите.' },
+  d06: { name: 'Снимки с гостите, поздравления и подаръци', time: '16:30', end: '17:30', zone: '', note: 'Статично на арката и гостите да ни заобикалят — същото място като церемонията.' },
+  d07: { name: 'Романтична фотосесия', time: '17:30', end: '19:00', zone: '', note: 'До 18:30–19:00.' },
+  d08: { name: 'Втори коктейл с цъканки преди вечеря', time: '17:30', end: '', zone: '', note: 'Около 2 ч 30 мин по черновата — начален час за уточняване.' },
+  d09: { name: 'Салатите + реч', time: '19:30', end: '20:30', zone: '', note: 'Реч, ако някой ще говори.' },
+  d10: { name: 'Посрещане на младоженците + питка и мед', time: '19:45', end: '20:00', zone: '', note: 'Конкретна песен при посрещането за настроение.' },
+  d11: { name: 'Основно ядене', time: '20:30', end: '21:30', zone: '', note: '' },
+  d12: { name: 'Торта', time: '22:30', end: '23:00', zone: '', note: '' },
+};
+const isOldSeed = ms => ms && Object.keys(ms).length === 6 && Object.entries(OLD_MOMENT_SEED).every(([k, v]) => ms[k] && ['name', 'time', 'zone', 'note'].every(f => (ms[k][f] || '') === v[f]));
+
+/* ══════════════════════════════════════════════════════════════
+   RENDERER / SCENE
+   ══════════════════════════════════════════════════════════════ */
+const canvas = document.getElementById('c');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xc3d3de, 260, 1700);
+const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 5000);
+
+/* physically based sky + matching image-based lighting */
+const sunDir = new THREE.Vector3(0.4, 0.8, 0.3).normalize();   // direction TO the sun/moon
+const sky = new Sky(); sky.scale.setScalar(4000); scene.add(sky);
+const envScene = new THREE.Scene(), envSky = new Sky(); envSky.scale.setScalar(100); envScene.add(envSky);
+const pmrem = new THREE.PMREMGenerator(renderer);
+let envRT = null;
+function updateSky(elev, az, turb, ray) {
+  const d = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - elev), THREE.MathUtils.degToRad(az));
+  [sky, envSky].forEach(sk => { const u = sk.material.uniforms;
+    u.sunPosition.value.copy(d); u.turbidity.value = turb; u.rayleigh.value = ray; u.mieCoefficient.value = 0.005; u.mieDirectionalG.value = 0.8; });
+  if (envRT) envRT.dispose();
+  envRT = pmrem.fromScene(envScene); scene.environment = envRT.texture;
+  return d;
+}
+/* night sky */
+const stars = (() => {
+  const v = []; for (let i = 0; i < 1800; i++) { const a = hash(i, 1) * Math.PI * 2, y = 0.08 + hash(i, 2) * 0.92, r = Math.sqrt(1 - y * y); v.push(Math.cos(a) * r * 3000, y * 3000, Math.sin(a) * r * 3000); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(v, 3));
+  const pts = new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.85 }));
+  pts.visible = false; scene.add(pts); return pts;
+})();
+
+/* procedural, tileable textures (no downloads) */
+function tileNoise(N, cells, seed, oct = 4) {
+  const out = new Float32Array(N * N); let amp = 1, tot = 0;
+  for (let o = 0; o < oct; o++) {
+    const c = cells << o;
+    const h = (a, b) => hash(((a % c) + c) % c + seed * 31 + o * 7.13, ((b % c) + c) % c + seed * 17 + o * 3.7);
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
+      const x = i / N * c, y = j / N * c, xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+      const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+      const a = h(xi, yi), b = h(xi + 1, yi), cc = h(xi, yi + 1), d = h(xi + 1, yi + 1);
+      out[j * N + i] += (a + (b - a) * u + (cc - a) * v + (a - b - cc + d) * u * v) * amp;
+    }
+    tot += amp; amp *= 0.5;
+  }
+  for (let k = 0; k < out.length; k++) out[k] /= tot;
+  return out;
+}
+function texFromPixels(N, fill, srgb) {
+  const c = document.createElement('canvas'); c.width = c.height = N; const x = c.getContext('2d'); const img = x.createImageData(N, N);
+  for (let k = 0; k < N * N; k++) { const [r, g, b] = fill(k); img.data[k * 4] = r; img.data[k * 4 + 1] = g; img.data[k * 4 + 2] = b; img.data[k * 4 + 3] = 255; }
+  x.putImageData(img, 0, 0);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
+function grayTex(h, N) { return texFromPixels(N, k => { const v = h[k] * 255; return [v, v, v]; }); }
+function normalTex(h, N, strength) {
+  return texFromPixels(N, k => {
+    const i = k % N, j = (k / N) | 0;
+    const dx = h[j * N + (i + 1) % N] - h[j * N + (i - 1 + N) % N], dy = h[((j + 1) % N) * N + i] - h[((j - 1 + N) % N) * N + i];
+    let nx = -dx * strength, ny = -dy * strength, nz = 1; const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
+    return [(nx * 0.5 + 0.5) * 255, (ny * 0.5 + 0.5) * 255, (nz * 0.5 + 0.5) * 255];
+  });
+}
+const NOISE_A = tileNoise(256, 8, 3), NOISE_B = tileNoise(256, 6, 9);
+const detailGray = grayTex(NOISE_A, 256);
+const detailNormal = normalTex(NOISE_A, 256, 6);
+const waterNormals = normalTex(NOISE_B, 256, 10);
+camera.position.set(45, 150, 105);
+
+const hemi = new THREE.HemisphereLight(0xdfeeff, 0x4a5a2a, 0.35);
+scene.add(hemi);
+const sun = new THREE.DirectionalLight(0xffffff, 2.2);
+sun.castShadow = true;
+sun.shadow.mapSize.set(HQ ? 4096 : 2048, HQ ? 4096 : 2048);
+Object.assign(sun.shadow.camera, { left: -110, right: 110, top: 110, bottom: -110, near: 10, far: 500 });
+sun.shadow.bias = -0.0008;
+sun.shadow.normalBias = 0.4;
+scene.add(sun, sun.target);
+sun.target.position.set(0, 0, 10);
+
+/* --- ground texture: procedural base (+ optional reference overlay) + zones + drawings --- */
+const BASE_N = 1024, TEX_N = 2048;
+const baseCanvas = document.createElement('canvas'); baseCanvas.width = baseCanvas.height = BASE_N;
+(function paintBase() {
+  const ctx = baseCanvas.getContext('2d'); const img = ctx.createImageData(BASE_N, BASE_N); const d = img.data;
+  for (let j = 0; j < BASE_N; j++) {
+    const z = GZ0 + (j + 0.5) / BASE_N * G;
+    for (let i = 0; i < BASE_N; i++) {
+      const x = GX0 + (i + 0.5) / BASE_N * G;
+      const n = fbm(x, z), n2 = hash(x * 3.1, z * 2.7);
+      let r, g, b;
+      const dRoad = distPoly(ROAD, x, z), dRiv = distPoly(RIVER, x, z);
+      if (dRiv < 4.5) { r = 62 + n * 20; g = 98 + n * 20; b = 104 + n * 16; }
+      else if (dRiv < 8.5) { const k = 0.75 + n2 * 0.25; r = 208 * k; g = 202 * k; b = 186 * k; }
+      else if (dRoad < 2.6) { const k = 0.9 + n2 * 0.1; r = 118 * k; g = 118 * k; b = 114 * k; }
+      else if (dRoad < 3.4) { r = 150; g = 140; b = 118; }
+      else if (isPaved(x, z)) { const k = 0.88 + n2 * 0.12; r = 200 * k; g = 194 * k; b = 180 * k; }
+      else if (distPoly(PATH, x, z) < 1.3) { const k = 0.85 + n2 * 0.15; r = 172 * k; g = 162 * k; b = 140 * k; }
+      else if (isLawn(x, z)) { r = 96 + n * 40; g = 142 + n * 34; b = 56 + n * 16; }
+      else if (isMeadow(x, z)) { r = 168 + n * 30; g = 156 + n * 26; b = 104 + n * 20; }
+      else if (isBeech(x, z)) { r = 96 + n * 36 + n2 * 12; g = 80 + n * 26 + n2 * 10; b = 56 + n * 16; }   // beech leaf litter
+      else { r = 62 + n * 30; g = 68 + n * 28; b = 38 + n * 14; }
+      const o = (j * BASE_N + i) * 4; d[o] = r; d[o + 1] = g; d[o + 2] = b; d[o + 3] = 255;
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+})();
+const groundCanvas = document.createElement('canvas'); groundCanvas.width = groundCanvas.height = TEX_N;
+const gctx = groundCanvas.getContext('2d');
+const groundTex = new THREE.CanvasTexture(groundCanvas);
+groundTex.colorSpace = THREE.SRGBColorSpace;
+groundTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const toTex = (x, z) => [(x - GX0) / G * TEX_N, (z - GZ0) / G * TEX_N];
+const M2T = TEX_N / G;
+
+let overlayImg = null, overlayAlpha = 0.85;
+let liveStroke = null;
+let groundDirty = true;
+function drawGround() {
+  groundDirty = false;
+  gctx.globalAlpha = 1;
+  gctx.drawImage(baseCanvas, 0, 0, TEX_N, TEX_N);
+  if (overlayImg) {
+    // the satellite screenshot frame: pixel (0,0) → world px([0,0]); (w,h) → assumes 2000×1151 framing
+    const [ax, az] = px([0, 0]), [bx, bz] = px([2000, 1151]);
+    const [u0, v0] = toTex(ax, az), [u1, v1] = toTex(bx, bz);
+    gctx.globalAlpha = overlayAlpha;
+    gctx.drawImage(overlayImg, u0, v0, u1 - u0, v1 - v0);
+    gctx.globalAlpha = 1;
+  }
+  const zones = Store.data.zones || {};
+  for (const id in zones) {
+    const zn = zones[id]; const [u, v] = toTex(zn.x, zn.z);
+    gctx.beginPath(); gctx.arc(u, v, zn.r * M2T, 0, Math.PI * 2);
+    gctx.fillStyle = hexA(zn.color, 0.22); gctx.fill();
+    gctx.setLineDash([10, 7]); gctx.lineWidth = 3; gctx.strokeStyle = hexA(zn.color, 0.95); gctx.stroke(); gctx.setLineDash([]);
+  }
+  const strokes = Object.values(Store.data.strokes || {});
+  if (liveStroke) strokes.push(liveStroke);
+  for (const s of strokes) {
+    if (!s.pts || s.pts.length < 1) continue;
+    gctx.lineCap = 'round'; gctx.lineJoin = 'round';
+    gctx.strokeStyle = s.color; gctx.lineWidth = Math.max(2, s.w * M2T);
+    gctx.beginPath();
+    s.pts.forEach(([x, z], i) => { const [u, v] = toTex(x, z); i ? gctx.lineTo(u, v) : gctx.moveTo(u, v); });
+    if (s.pts.length === 1) { const [u, v] = toTex(...s.pts[0]); gctx.lineTo(u + 0.1, v); }
+    gctx.stroke();
+  }
+  groundTex.needsUpdate = true;
+  paintGrassMask();
+}
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+}
+
+/* --- terrain mesh --- */
+const terrainGeo = new THREE.PlaneGeometry(G, G, 220, 220);
+terrainGeo.rotateX(-Math.PI / 2);
+terrainGeo.translate(GX0 + G / 2, 0, GZ0 + G / 2);
+{
+  const p = terrainGeo.attributes.position;
+  for (let i = 0; i < p.count; i++) p.setY(i, heightAt(p.getX(i), p.getZ(i)));
+  terrainGeo.computeVertexNormals();
+}
+const terrainMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.97, normalMap: detailNormal, normalScale: new THREE.Vector2(0.9, 0.9) });
+{
+  const nm = detailNormal.clone(); nm.needsUpdate = true; nm.repeat.set(G / 2.5, G / 2.5); terrainMat.normalMap = nm;
+  terrainMat.onBeforeCompile = sh => {
+    sh.uniforms.detailMap = { value: detailGray };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float dA = texture2D(detailMap, vMapUv * 240.0).r;
+        float dB = texture2D(detailMap, vMapUv * 31.0 + 0.37).r;
+        diffuseColor.rgb *= (0.70 + 0.55 * dA) * (0.84 + 0.32 * dB);`);
+  };
+}
+const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+terrain.receiveShadow = true;
+scene.add(terrain);
+
+/* --- surrounding forested hills (the valley continues beyond the modelled area) --- */
+{
+  const S = 4200, N = HQ ? 220 : 140;
+  const g = new THREE.PlaneGeometry(S, S, N, N); g.rotateX(-Math.PI / 2); g.translate(0, 0, 30);
+  const VALLEY = [[-2200, 870], ...RIVER, [1800, -1450]];
+  const pos = g.attributes.position, cols = [], c = new THREE.Color();
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i);
+    const ix = Math.min(GX0 + G - 1, Math.max(GX0 + 1, x)), iz = Math.min(GZ0 + G - 1, Math.max(GZ0 + 1, z));
+    const d = Math.hypot(x - ix, z - iz);
+    let h = heightAt(ix, iz);
+    if (d === 0) h -= 4; // hidden under the detailed ground
+    else {
+      const ridge = vnoise(x / 520, z / 520) * 0.55 + vnoise(x / 190, z / 190) * 0.3 + vnoise(x / 70, z / 70) * 0.15;
+      const valley = smooth(30, 380, distPoly(VALLEY, x, z));
+      h += smooth(0, 520, d) * (70 + ridge * 260) * (0.15 + 0.85 * valley) + vnoise(x / 13, z / 13) * 4 * smooth(0, 60, d);
+    }
+    pos.setY(i, h);
+    const n = vnoise(x / 40, z / 40), m = vnoise(x / 160, z / 160);
+    c.setRGB(0.10 + n * 0.06 + m * 0.05, 0.17 + n * 0.08 + m * 0.03, 0.07 + n * 0.03);
+    cols.push(c.r, c.g, c.b);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+  g.computeVertexNormals();
+  const hills = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }));
+  scene.add(hills);
+}
+
+/* --- river water + waterfall foam --- */
+{
+  const pts = []; const W = 9.5;
+  const verts = [], idx = [];
+  const dense = [];
+  for (let i = 0; i < RIVER.length - 1; i++) {
+    const [ax, az] = RIVER[i], [bx, bz] = RIVER[i + 1];
+    const n = Math.ceil(Math.hypot(bx - ax, bz - az) / 4);
+    for (let k = 0; k < n; k++) dense.push([ax + (bx - ax) * k / n, az + (bz - az) * k / n]);
+  }
+  dense.push(RIVER[RIVER.length - 1]);
+  dense.forEach(([x, z], i) => {
+    const [nx, nz] = dense[Math.min(i + 1, dense.length - 1)], [px0, pz0] = dense[Math.max(i - 1, 0)];
+    let tx = nx - px0, tz = nz - pz0; const l = Math.hypot(tx, tz) || 1; tx /= l; tz /= l;
+    // built in the XY plane (Water.js reflects about local +z), rotated flat below
+    verts.push(x - tz * W / 2, -(z + tx * W / 2), 0, x + tz * W / 2, -(z - tx * W / 2), 0);
+    if (i < dense.length - 1) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  const water = HQ
+    ? new Water(g, { textureWidth: 512, textureHeight: 512, waterNormals, sunDirection: sunDir.clone(), sunColor: 0xfff2dd, waterColor: 0x1f3d38, distortionScale: 2.4, fog: true, alpha: 0.95 })
+    : new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x3f6e6a, roughness: 0.08, metalness: 0.2, side: THREE.DoubleSide }));
+  if (HQ) { water.material.uniforms.size.value = 2.5; water.material.side = THREE.DoubleSide; window.__water = water; }
+  water.rotation.x = -Math.PI / 2; water.position.y = -0.5;
+  water.receiveShadow = true;
+  scene.add(water);
+  // cascade foam around the waterfalls
+  const foamMat = new THREE.MeshStandardMaterial({ color: 0xf4f6f4, roughness: 0.5, transparent: true, opacity: 0.8, normalMap: waterNormals });
+  const foamGeo = new THREE.IcosahedronGeometry(1, 1);
+  const rockMat = new THREE.MeshStandardMaterial({ color: 0xcfc8b6, roughness: 0.9, flatShading: true, normalMap: detailNormal });
+  for (let i = 0; i < 70; i++) {
+    const t = i / 70;
+    const x = -66 + t * 34 + (hash(i, 1) - 0.5) * 3, z0 = zAt(RIVER, x);
+    const z = z0 + (hash(i, 2) - 0.5) * 7;
+    const isFoam = hash(i, 3) > 0.45;
+    const m = new THREE.Mesh(foamGeo, isFoam ? foamMat : rockMat);
+    const s = isFoam ? 0.5 + hash(i, 4) * 0.9 : 0.8 + hash(i, 4) * 1.6;
+    m.scale.set(s * 1.4, s * 0.45, s);
+    m.position.set(x, heightAt(x, z) + (isFoam ? 0.3 : 0.1), z);
+    m.rotation.y = hash(i, 5) * 6;
+    m.castShadow = !isFoam; m.receiveShadow = true;
+    scene.add(m);
+  }
+}
+
+/* --- trees (instanced) --- */
+{
+  const spots = [];
+  const STEP = 6.5;
+  for (let x = GX0 + 2; x < GX0 + G - 2; x += STEP) {
+    for (let z = GZ0 + 2; z < GZ0 + G - 2; z += STEP) {
+      const tx = x + (hash(x, z) - 0.5) * STEP * 0.9, tz = z + (hash(z, x) - 0.5) * STEP * 0.9;
+      if (distPoly(ROAD, tx, tz) < 6 || distPoly(RIVER, tx, tz) < 8 || distPoly(PATH, tx, tz) < 2.6) continue;
+      if (Math.hypot(tx - SLAB[0], tz - SLAB[1]) < 14) continue;
+      if (isPaved(tx, tz)) continue;
+      const r = hash(tx * 1.7, tz * 1.3);
+      if (isLawn(tx, tz) && r > 0.07) continue;
+      if (isMeadow(tx, tz) && r > 0.025) continue;
+      const beech = isBeech(tx, tz);
+      if (beech && r > 0.65) continue; // open understory under the beeches
+      spots.push([tx, tz, r, beech]);
+    }
+  }
+  // leaf-cluster texture for alpha-tested leaf cards
+  const leafTex = (() => {
+    const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d');
+    for (let i = 0; i < 230; i++) {
+      const a = hash(i, 11) * Math.PI * 2, r = Math.sqrt(hash(i, 12)) * 112, px0 = 128 + Math.cos(a) * r, py0 = 128 + Math.sin(a) * r;
+      const L = 9 + hash(i, 13) * 12, Wd = L * (0.42 + hash(i, 14) * 0.15);
+      x.save(); x.translate(px0, py0); x.rotate(hash(i, 15) * Math.PI * 2);
+      const li = 22 + hash(i, 16) * 26; x.fillStyle = `hsl(${88 + hash(i, 17) * 26}, ${38 + hash(i, 18) * 22}%, ${li}%)`;
+      x.beginPath(); x.ellipse(0, 0, L, Wd, 0, 0, Math.PI * 2); x.fill();
+      x.fillStyle = `hsla(80, 40%, ${li + 14}%, .35)`; x.beginPath(); x.ellipse(-L * 0.2, -Wd * 0.2, L * 0.5, Wd * 0.4, 0, 0, Math.PI * 2); x.fill();
+      x.restore();
+    }
+    const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
+  })();
+  function crownGeometry(cards) {
+    const parts = [];
+    for (let k = 0; k < cards; k++) {
+      const pg = new THREE.PlaneGeometry(1.15, 1.15);
+      const u = hash(k, 21) * 2 - 1, th = hash(k, 22) * Math.PI * 2, rr = 0.45 + hash(k, 23) * 0.5, sq = Math.sqrt(1 - u * u);
+      pg.rotateX(hash(k, 24) * Math.PI); pg.rotateY(hash(k, 25) * Math.PI); pg.rotateZ(hash(k, 26) * Math.PI);
+      pg.translate(Math.cos(th) * sq * rr, u * rr, Math.sin(th) * sq * rr);
+      parts.push(pg);
+    }
+    const g = mergeGeometries(parts);
+    // spherical normals give the crown soft, volumetric shading; darker underneath
+    const p = g.attributes.position, n = g.attributes.normal, col = [];
+    for (let i = 0; i < p.count; i++) {
+      const v = new THREE.Vector3(p.getX(i), p.getY(i) * 1.2, p.getZ(i)).normalize(); n.setXYZ(i, v.x, v.y, v.z);
+      const t = 0.62 + 0.38 * (p.getY(i) * 0.5 + 0.5); col.push(t, t, t);
+    }
+    g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    return g;
+  }
+  const wind = (sh, amount) => {
+    sh.uniforms.uTime = U.uTime;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vec4 ip = instanceMatrix[3];
+        float sw = sin(uTime * 1.3 + ip.x * 0.07 + ip.z * 0.05) * ${amount} + sin(uTime * 2.9 + ip.x * 0.31 + ip.z * 0.17) * ${amount * 0.35};
+        transformed.x += sw * (position.y + 1.0); transformed.z += sw * 0.6 * (position.y + 1.0);`);
+  };
+  const barkTex = (() => { const h = tileNoise(128, 4, 5); return texFromPixels(128, k => { const i = k % 128, j = (k / 128) | 0; const v = h[k] * 0.6 + h[(j * 7 % 128) * 128 + i] * 0.4; const t = 95 + v * 120; return [t, t, t]; }, true); })();
+  barkTex.repeat.set(2, 6);
+  const trunkGeo = new THREE.CylinderGeometry(0.2, 0.34, 1, 10, 1); trunkGeo.translate(0, 0.5, 0);
+  const coreGeo = new THREE.IcosahedronGeometry(0.72, 1);
+  const leafGeo = crownGeometry(HQ ? 26 : 12);
+  const nCrowns = spots.length * 2;
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, map: barkTex, normalMap: detailNormal }), spots.length);
+  const leafMat = new THREE.MeshStandardMaterial({ map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true, roughness: 0.8 });
+  leafMat.onBeforeCompile = sh => wind(sh, 0.035);
+  const coreMat = new THREE.MeshStandardMaterial({ color: 0x1d3316, roughness: 1 });
+  coreMat.onBeforeCompile = sh => wind(sh, 0.035);
+  const crowns = new THREE.InstancedMesh(leafGeo, leafMat, nCrowns);
+  const cores = new THREE.InstancedMesh(coreGeo, coreMat, nCrowns);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), col = new THREE.Color();
+  const greens = [0x7f9a5a, 0x8aa65e, 0x6f8c4c, 0x93ab64, 0x7a9450, 0x86a05a];
+  const aoCtx = baseCanvas.getContext('2d'); aoCtx.save(); aoCtx.globalCompositeOperation = 'multiply';
+  const PXM = BASE_N / G;
+  let ci = 0;
+  spots.forEach(([x, z, r, beech], i) => {
+    // beeches: tall, clean grey trunks with the canopy high up (as in the walk-through photos)
+    const H = beech ? 17 + hash(x, z * 2) * 8 : 9 + hash(x, z * 2) * 9, y = heightAt(x, z) - 0.3;
+    const lift = beech ? 0.22 : 0;
+    m4.compose(p.set(x, y, z), q.setFromAxisAngle(p.clone().set(0, 1, 0), hash(x, z) * 6), s.set(beech ? 1.5 : 1.1, H * (0.5 + lift), beech ? 1.5 : 1.1)); trunks.setMatrixAt(i, m4);
+    trunks.setColorAt(i, col.setHex(beech ? 0x77746a : 0x5a4a3a));
+    const R = H * (beech ? 0.21 : 0.19 + hash(z, x * 2) * 0.07);
+    for (let k = 0; k < 2; k++) {
+      const ox = (hash(x + k, z) - 0.5) * R * 0.7, oz = (hash(x, z + k) - 0.5) * R * 0.7;
+      q.setFromEuler(new THREE.Euler(0, hash(z, k) * 6.28, 0));
+      m4.compose(p.set(x + ox, y + H * (0.55 + lift + k * (beech ? 0.1 : 0.16)), z + oz), q, s.set(R * (1.1 - k * 0.25), R * (1.0 - k * 0.2), R * (1.1 - k * 0.25)));
+      crowns.setMatrixAt(ci, m4); cores.setMatrixAt(ci, m4);
+      col.setHex(greens[Math.floor(hash(x * k + 3, z) * greens.length)]).offsetHSL(0, 0, (r - 0.5) * 0.08);
+      crowns.setColorAt(ci++, col);
+    }
+    // soft ambient occlusion under the canopy, baked into the ground texture
+    const gx = (x - GX0) * PXM, gz = (z - GZ0) * PXM, gr = R * 1.3 * PXM;
+    const grd = aoCtx.createRadialGradient(gx, gz, 0, gx, gz, gr); grd.addColorStop(0, 'rgba(70,70,60,0.55)'); grd.addColorStop(1, 'rgba(255,255,255,0)');
+    aoCtx.fillStyle = grd; aoCtx.fillRect(gx - gr, gz - gr, gr * 2, gr * 2);
+  });
+  aoCtx.restore();
+  trunks.castShadow = crowns.castShadow = cores.castShadow = true;
+  crowns.receiveShadow = trunks.receiveShadow = true;
+  scene.add(trunks, cores, crowns);
+}
+
+/* --- buildings --- */
+const matCache = {};
+const mat = (c, extra) => { const k = c + (extra ? JSON.stringify(extra) : ''); return matCache[k] || (matCache[k] = new THREE.MeshStandardMaterial({ color: c, roughness: 0.85, ...extra })); };
+function bx(w, h, d, m) { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.castShadow = o.receiveShadow = true; return o; }
+function cyl(rt, rb, h, m, seg = 12) { const o = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), m); o.castShadow = o.receiveShadow = true; return o; }
+function gableRoof(w, d, h, m) {
+  const shape = new THREE.Shape(); shape.moveTo(-d / 2 - 0.6, 0); shape.lineTo(d / 2 + 0.6, 0); shape.lineTo(0, h); shape.closePath();
+  const g = new THREE.ExtrudeGeometry(shape, { depth: w + 1.2, bevelEnabled: false });
+  g.translate(0, 0, -(w + 1.2) / 2); g.rotateY(Math.PI / 2);
+  const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o;
+}
+function building(cx, cz, w, d, h, roofH, wall, roof) {
+  const g = new THREE.Group();
+  const walls = bx(w, h, d, mat(wall)); walls.position.y = h / 2; g.add(walls);
+  const r = gableRoof(w, d, roofH, mat(roof)); r.position.y = h; g.add(r);
+  // windows
+  const win = mat('#3b4a52', { roughness: 0.3 });
+  for (let i = -w / 2 + 2; i < w / 2 - 1; i += 3.2) {
+    const a = bx(1.1, 1.2, 0.08, win); a.position.set(i, h * 0.55, d / 2 + 0.03); g.add(a);
+    const b = a.clone(); b.position.z = -d / 2 - 0.03; g.add(b);
+  }
+  g.position.set(cx, heightAt(cx, cz) - 0.2, cz); g.rotation.y = ROT;
+  scene.add(g);
+}
+/* ══════════════════════════════════════════════════════════════
+   DECORATION ITEMS
+   ══════════════════════════════════════════════════════════════ */
+const glowMat = new THREE.MeshStandardMaterial({ color: 0xfff1c8, emissive: 0xffc861, emissiveIntensity: 0.4 });
+const flameMat = new THREE.MeshStandardMaterial({ color: 0xffa040, emissive: 0xff7a1a, emissiveIntensity: 0.6 });
+const seatGeo = new THREE.BoxGeometry(0.45, 0.06, 0.45).translate(0, 0.45, 0);
+const backGeo = new THREE.BoxGeometry(0.45, 0.5, 0.05).translate(0, 0.72, 0.2);
+const face = (x, z, tx, tz) => Math.atan2(-(tx - x), -(tz - z));
+function chairs(list, color) { // list of [x,z,rotY]
+  const g = new THREE.Group(); const m = mat(color);
+  const a = new THREE.InstancedMesh(seatGeo, m, list.length), b = new THREE.InstancedMesh(backGeo, m, list.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+  list.forEach(([x, z, r], i) => { m4.compose(p.set(x, 0, z), q.setFromAxisAngle(up, r), one); a.setMatrixAt(i, m4); b.setMatrixAt(i, m4); });
+  a.castShadow = b.castShadow = true; g.add(a, b); return g;
+}
+function flowerCluster(n, color, spread, y = 0.2, seed = 1) {
+  const g = new THREE.Group(); const fm = mat(color), lm = mat('#4f7a3a');
+  const geo = new THREE.IcosahedronGeometry(1, 0);
+  for (let i = 0; i < n; i++) {
+    const o = new THREE.Mesh(geo, i % 3 === 0 ? lm : fm);
+    const s = 0.12 + hash(i, seed) * 0.16; o.scale.setScalar(s);
+    o.position.set((hash(i * 2, seed) - 0.5) * spread, y + hash(i, seed * 3) * 0.25, (hash(seed, i * 2) - 0.5) * spread * 0.6);
+    o.castShadow = true; g.add(o);
+  }
+  return g;
+}
+function textBoard(text, w, h, bg = '#f7f2e8', fg = '#2f3a2a') {
+  const c = document.createElement('canvas'); c.width = 512; c.height = Math.round(512 * h / w);
+  const x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0, 0, c.width, c.height);
+  x.fillStyle = fg; x.textAlign = 'center'; x.textBaseline = 'middle';
+  let fs = 72; x.font = `600 ${fs}px "Cormorant Garamond", serif`;
+  while (x.measureText(text).width > c.width * 0.86 && fs > 20) { fs -= 4; x.font = `600 ${fs}px "Cormorant Garamond", serif`; }
+  x.fillText(text, c.width / 2, c.height / 2);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshStandardMaterial({ map: t, roughness: 0.9 });
+}
+
+const TYPES = {
+  arch:       { name: 'Ceremony arch', group: 'Ceremony', color: '#e7b9b4', build(it) {
+      const g = new THREE.Group(); const wood = mat('#efe9df');
+      [-1.3, 1.3].forEach(x => { const p = cyl(0.07, 0.07, 2.5, wood, 8); p.position.set(x, 1.25, 0); g.add(p); });
+      const t = new THREE.Mesh(new THREE.TorusGeometry(1.3, 0.07, 8, 28, Math.PI), wood); t.position.y = 2.5; t.castShadow = true; g.add(t);
+      for (let i = 0; i < 4; i++) { const f = flowerCluster(9, it.color, 0.8, 0, i + 2); const a = Math.PI * (0.15 + i * 0.12);
+        f.position.set(Math.cos(a) * 1.3, 2.5 + Math.sin(a) * 1.3, 0); g.add(f); }
+      const f2 = flowerCluster(10, it.color, 1, 0, 9); f2.position.set(-1.3, 0, 0.2); g.add(f2);
+      return g; } },
+  seating:    { name: 'Ceremony seats (60)', group: 'Ceremony', color: '#f1ede4', build(it) {
+      const L = []; for (let r = 0; r < 6; r++) for (let k = 0; k < 5; k++) { const z = 2 + r * 0.95; L.push([1 + k * 0.55, z, 0], [-1 - k * 0.55, z, 0]); }
+      return chairs(L, it.color); } },
+  aisle:      { name: 'Aisle runner', group: 'Ceremony', color: '#f3eee6', foot: [1.3, 9.2, 0, 4.5], build(it) {
+      const g = new THREE.Group(); const r = bx(1.1, 0.02, 9, mat(it.color)); r.position.set(0, 0.02, 4.5); g.add(r);
+      for (let i = 0; i < 6; i++) [-0.75, 0.75].forEach((x, j) => { const f = flowerCluster(6, '#e7b9b4', 0.4, 0.05, i * 2 + j + 1); f.position.set(x, 0, 1 + i * 1.6); g.add(f); });
+      return g; } },
+  roundTable: { name: 'Round table (8)', group: 'Dinner', color: '#f6f2ea', build(it) {
+      const g = new THREE.Group(); const t = cyl(0.85, 0.85, 0.75, mat(it.color), 24); t.position.y = 0.375; g.add(t);
+      const cen = flowerCluster(7, '#e7b9b4', 0.35, 0.78, 4); g.add(cen);
+      const L = []; for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, x = Math.cos(a) * 1.3, z = Math.sin(a) * 1.3; L.push([x, z, face(x, z, 0, 0)]); }
+      g.add(chairs(L, '#e2dccf')); return g; } },
+  longTable:  { name: 'Long table (12)', group: 'Dinner', color: '#f6f2ea', build(it) {
+      const g = new THREE.Group(); const t = bx(6, 0.75, 1, mat(it.color)); t.position.y = 0.375; g.add(t);
+      for (let i = 0; i < 3; i++) { const f = flowerCluster(6, '#e7b9b4', 0.5, 0.78, i + 7); f.position.x = -2 + i * 2; g.add(f); }
+      const L = []; for (let i = 0; i < 6; i++) { const x = -2.5 + i; L.push([x, -0.85, face(x, -0.85, x, 0)], [x, 0.85, face(x, 0.85, x, 0)]); }
+      g.add(chairs(L, '#e2dccf')); return g; } },
+  bar:        { name: 'Bar', group: 'Dinner', color: '#8a6a4a', foot: [3.6, 2.8, 0, -0.6], build(it) {
+      const g = new THREE.Group(); const c = bx(3.2, 1.1, 0.7, mat(it.color)); c.position.y = 0.55; g.add(c);
+      const top = bx(3.4, 0.06, 0.9, mat('#efe9df')); top.position.y = 1.12; g.add(top);
+      const sh = bx(3.2, 1.8, 0.4, mat('#5d4632')); sh.position.set(0, 0.9, -1.4); g.add(sh);
+      return g; } },
+  lounge:     { name: 'Lounge corner', group: 'Dinner', color: '#d8cbb5', foot: [4.2, 3.4, 0, 0], build(it) {
+      const g = new THREE.Group(); const m = mat(it.color);
+      const rug = bx(4, 0.02, 3, mat('#b9a284')); rug.position.y = 0.01; g.add(rug);
+      const s1 = bx(3, 0.45, 0.8, m); s1.position.set(0, 0.22, -1.2); g.add(s1);
+      const b1 = bx(3, 0.4, 0.2, m); b1.position.set(0, 0.6, -1.55); g.add(b1);
+      const s2 = bx(0.8, 0.45, 2, m); s2.position.set(-1.6, 0.22, 0); g.add(s2);
+      const tb = cyl(0.45, 0.45, 0.4, mat('#8a6a4a'), 16); tb.position.set(0.3, 0.2, 0.2); g.add(tb);
+      return g; } },
+  dance:      { name: 'Dance floor', group: 'Party', color: '#eee8da', foot: [6.2, 6.2, 0, 0], build(it) {
+      const g = new THREE.Group(); const f = bx(6, 0.08, 6, mat(it.color, { roughness: 0.35 })); f.position.y = 0.04; g.add(f);
+      const ln = mat('#c8bfae'); for (let i = -2; i <= 2; i++) { const a = bx(0.03, 0.01, 6, ln); a.position.set(i * 1.2, 0.085, 0); g.add(a); const b = bx(6, 0.01, 0.03, ln); b.position.set(0, 0.085, i * 1.2); g.add(b); }
+      return g; } },
+  stage:      { name: 'DJ / band stage', group: 'Party', color: '#3a3936', foot: [4.2, 3.2, 0, 0], build(it) {
+      const g = new THREE.Group(); const p = bx(4, 0.4, 3, mat(it.color)); p.position.y = 0.2; g.add(p);
+      const desk = bx(1.6, 1, 0.6, mat('#222')); desk.position.set(0, 0.9, 0); g.add(desk);
+      [-1.7, 1.7].forEach(x => { const s = bx(0.5, 1.4, 0.5, mat('#1d1d1d')); s.position.set(x, 1.1, -1); g.add(s); });
+      return g; } },
+  tent:       { name: 'Tent / marquee', group: 'Party', color: '#fbfaf6', build(it) {
+      const g = new THREE.Group(); const m = mat(it.color, { side: THREE.DoubleSide });
+      [[-5, -3], [5, -3], [-5, 3], [5, 3], [0, -3], [0, 3]].forEach(([x, z]) => { const p = cyl(0.08, 0.08, 3, mat('#d8d2c4'), 6); p.position.set(x, 1.5, z); g.add(p); });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(1, 1, 4, 1, true), m); roof.rotation.y = Math.PI / 4;
+      roof.scale.set(5 * Math.SQRT2, 2.2, 3 * Math.SQRT2); roof.position.y = 3 + 1.1; roof.castShadow = true; g.add(roof);
+      return g; } },
+  festoon:    { name: 'String lights', group: 'Light', color: '#ffd27a', build(it) {
+      const g = new THREE.Group(); const H = 4, S = 6;
+      const poles = [[-S, -S], [S, -S], [S, S], [-S, S]];
+      poles.forEach(([x, z]) => { const p = cyl(0.06, 0.06, H, mat('#3b3229'), 6); p.position.set(x, H / 2, z); g.add(p); });
+      const pairs = [[0, 1], [1, 2], [2, 3], [3, 0], [0, 2], [1, 3]];
+      const wire = [], bulbs = [];
+      pairs.forEach(([a, b]) => {
+        const [ax, az] = poles[a], [bx2, bz] = poles[b], L = Math.hypot(bx2 - ax, bz - az), n = Math.round(L / 0.8);
+        let prev = null;
+        for (let i = 0; i <= n; i++) { const t = i / n, x = ax + (bx2 - ax) * t, z = az + (bz - az) * t, y = H - 0.15 - Math.sin(t * Math.PI) * 0.9;
+          const v = new THREE.Vector3(x, y, z); if (prev) wire.push(prev, v); prev = v; if (i > 0 && i < n) bulbs.push(v); }
+      });
+      const lg = new THREE.BufferGeometry().setFromPoints(wire); g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x2a2520 })));
+      const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.07, 8, 6), glowMat, bulbs.length);
+      const m4 = new THREE.Matrix4(); bulbs.forEach((v, i) => { m4.makeTranslation(v.x, v.y - 0.08, v.z); im.setMatrixAt(i, m4); }); g.add(im);
+      return g; } },
+  lanterns:   { name: 'Lanterns', group: 'Light', color: '#ffd27a', build(it) {
+      const g = new THREE.Group();
+      for (let i = 0; i < 6; i++) { const l = new THREE.Group(); const a = cyl(0.14, 0.14, 0.32, glowMat, 8); a.position.y = 0.2; l.add(a);
+        const c = cyl(0.17, 0.17, 0.04, mat('#2f2a25'), 8); c.position.y = 0.38; l.add(c); const b = c.clone(); b.position.y = 0.02; l.add(b);
+        l.position.set((hash(i, 1) - 0.5) * 2.4, 0, (hash(1, i) - 0.5) * 2.4); l.scale.setScalar(0.8 + hash(i, i) * 0.8); g.add(l); }
+      return g; } },
+  firepit:    { name: 'Fire pit', group: 'Light', color: '#7a6f66', build(it) {
+      const g = new THREE.Group(); const r = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.22, 6, 14), mat(it.color, { flatShading: true }));
+      r.rotation.x = Math.PI / 2; r.position.y = 0.15; r.castShadow = true; g.add(r);
+      const f = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.9, 7), flameMat); f.position.y = 0.45; g.add(f);
+      return g; } },
+  flowers:    { name: 'Flowers', group: 'Decor', color: '#e7a6b0', build(it) { return flowerCluster(22, it.color, 1.4, 0.15, 11); } },
+  photo:      { name: 'Photo corner', group: 'Decor', color: '#e7b9b4', build(it) {
+      const g = new THREE.Group(); const m = mat('#efe9df');
+      [-1.5, 1.5].forEach(x => { const p = bx(0.1, 2.6, 0.1, m); p.position.set(x, 1.3, 0); g.add(p); });
+      const top = bx(3.1, 0.1, 0.1, m); top.position.y = 2.6; g.add(top);
+      const back = bx(3, 2.4, 0.04, mat(it.color)); back.position.set(0, 1.3, -0.4); g.add(back);
+      const f = flowerCluster(14, '#f3e3d6', 2.4, 2.5, 5); g.add(f); return g; } },
+  sign:       { name: 'Sign', group: 'Decor', color: '#c9b38a', build(it) {
+      const g = new THREE.Group(); const p = bx(0.08, 1.5, 0.08, mat('#6b5440')); p.position.y = 0.75; g.add(p);
+      const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.7, 0.05), [mat(it.color), mat(it.color), mat(it.color), mat(it.color), textBoard(it.label || 'Welcome', 1.4, 0.7), mat(it.color)]);
+      b.position.set(0, 1.6, 0.05); b.castShadow = true; g.add(b); return g; } },
+  pin:        { name: 'Note pin', group: 'Decor', color: '#c8463d', build(it) {
+      const g = new THREE.Group(); const c = new THREE.Mesh(new THREE.ConeGeometry(0.25, 1.2, 12), mat(it.color)); c.rotation.x = Math.PI; c.position.y = 0.6; g.add(c);
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.42, 16, 12), mat(it.color)); s.position.y = 1.5; s.castShadow = true; g.add(s); return g; } },
+};
+
+/* ══════════════════════════════════════════════════════════════
+   VENUE DETAIL — modelled on the walk-through photos (Nov 2026):
+   stone lodge with glass front + dark plank hipped roof, string lights
+   over the lawn, log fire pit, thuja row, round gazebo, two caravans
+   by the gravel path, beech wood around the forest slab.
+   ══════════════════════════════════════════════════════════════ */
+function canvasTex(draw, size = 256) {
+  const c = document.createElement('canvas'); c.width = c.height = size; draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy(); return t;
+}
+const STONE_TEX = canvasTex((x, N) => {
+  x.fillStyle = '#5d5850'; x.fillRect(0, 0, N, N);
+  let y = 0, row = 0;
+  while (y < N) {
+    const h = 14 + hash(row, 1) * 12; let px0 = -hash(row, 2) * 30;
+    while (px0 < N) {
+      const w = 18 + hash(px0, row) * 34, v = 120 + hash(row, px0) * 70, warm = hash(px0, y) * 18;
+      x.fillStyle = `rgb(${v + warm},${v + warm * 0.6},${v - 4})`;
+      if (x.roundRect) { x.beginPath(); x.roundRect(px0 + 1.5, y + 1.5, w - 3, h - 3, 5); x.fill(); } else x.fillRect(px0 + 1.5, y + 1.5, w - 3, h - 3);
+      px0 += w;
+    }
+    y += h; row++;
+  }
+});
+const PLANK_TEX = canvasTex((x, N) => {
+  for (let i = 0; i < N; i += 8) {
+    const v = 60 + hash(i, 3) * 40; x.fillStyle = `rgb(${v + 6},${v},${v - 6})`; x.fillRect(i, 0, 8, N);
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.fillRect(i, 0, 1, N);
+    for (let j = 0; j < 4; j++) { x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(i, hash(i, j) * N, 8, 1); }
+  }
+});
+function texMat(base, rx, ry, extra = {}) { const t = base.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95, ...extra }); }
+const L2W = (cx, cz, lx, lz, r = ROT) => [cx + lx * Math.cos(r) + lz * Math.sin(r), cz - lx * Math.sin(r) + lz * Math.cos(r)];
+function putAt(obj, cx, cz, lx, lz, rotY = 0, r = ROT) {
+  const [x, z] = L2W(cx, cz, lx, lz, r); obj.position.set(x, heightAt(x, z), z); obj.rotation.y = r + rotY; scene.add(obj); return obj;
+}
+function hipRoof(W, D, H, ov, m) {
+  const a = W / 2 + ov, b = D / 2 + ov, rr = Math.max(0.01, (W - D) / 2);
+  const A = [-a, 0, b], B = [a, 0, b], C = [a, 0, -b], Dd = [-a, 0, -b], R1 = [-rr, H, 0], R2 = [rr, H, 0];
+  const tris = [A, B, R2, A, R2, R1, C, Dd, R1, C, R1, R2, B, C, R2, Dd, A, R1];
+  const pos = [], uv = [];
+  tris.forEach(v => { pos.push(...v); uv.push(v[0] * 0.5, (v[2] + v[1]) * 0.25); });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  g.computeVertexNormals();
+  const o = new THREE.Mesh(g, m); o.castShadow = o.receiveShadow = true; return o;
+}
+function festoonLine(group, a, b, sag = 0.7, step = 0.8) {
+  const n = Math.max(2, Math.round(a.distanceTo(b) / step)), pts = [], bulbs = [];
+  for (let i = 0; i <= n; i++) { const t = i / n, v = a.clone().lerp(b, t); v.y -= Math.sin(t * Math.PI) * sag; pts.push(v); if (i && i < n) bulbs.push(v); }
+  group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x2a2520 })));
+  const im = new THREE.InstancedMesh(new THREE.SphereGeometry(0.06, 8, 6), glowMat, bulbs.length);
+  const m4 = new THREE.Matrix4(); bulbs.forEach((v, i) => { m4.makeTranslation(v.x, v.y - 0.07, v.z); im.setMatrixAt(i, m4); }); group.add(im);
+}
+
+// ── The lodge (long stone building, glass front onto the lawn) ──
+const LODGE = { cx: -8, cz: -14, W: 26, D: 8, H: 2.9 };
+{
+  const { cx, cz, W, D, H } = LODGE, g = new THREE.Group();
+  const walls = bx(W, H, D, texMat(STONE_TEX, W / 3, H / 3)); walls.position.y = H / 2; g.add(walls);
+  const roof = hipRoof(W, D, 2.2, 1.3, texMat(PLANK_TEX, 1, 1, { side: THREE.DoubleSide, roughness: 0.9 })); roof.position.y = H; g.add(roof);
+  const chim = bx(0.9, 2, 0.9, texMat(STONE_TEX, 0.4, 0.6)); chim.position.set(-W / 2 + 6, H + 2, -0.6); g.add(chim);
+  const cap = bx(1.1, 0.12, 1.1, mat('#3d3833')); cap.position.set(-W / 2 + 6, H + 3.05, -0.6); g.add(cap);
+  // glazed front: tall glass doors with timber posts, white curtains behind
+  const glass = mat('#9aa3a6', { roughness: 0.15, metalness: 0.3 }), wood = mat('#6b4a30');
+  for (let x = -W / 2 + 3.6; x < W / 2 - 1.2; x += 1.6) {
+    const gl = bx(1.45, 2.3, 0.05, glass); gl.position.set(x, 1.2, D / 2 + 0.04); g.add(gl);
+    const post = bx(0.14, 2.6, 0.14, wood); post.position.set(x - 0.8, 1.3, D / 2 + 0.1); g.add(post);
+  }
+  const beam = bx(W - 3, 0.18, 0.18, wood); beam.position.set(1.5, 2.6, D / 2 + 0.1); g.add(beam);
+  for (let x = -W / 2 + 2; x < W / 2 - 1; x += 3.4) { const w2 = bx(1.2, 1.3, 0.06, glass); w2.position.set(x, 1.5, -D / 2 - 0.04); g.add(w2); }
+  // terrace slabs in front
+  const terr = bx(W - 2, 0.08, 3, mat('#b9b2a4')); terr.position.set(1, 0.04, D / 2 + 1.5); g.add(terr);
+  putAt(g, cx, cz, 0, 0);
+  // closed white parasols + white garden chairs on the terrace
+  [[1, 3.4], [7, 3.4]].forEach(([lx, lz]) => {
+    const u = new THREE.Group(); const pole = cyl(0.03, 0.03, 2.6, mat('#d9d6cf'), 6); pole.position.y = 1.3; u.add(pole);
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.2, 1.7, 10), mat('#eef0f1')); c.rotation.x = Math.PI; c.position.y = 1.95; c.castShadow = true; u.add(c);
+    putAt(u, cx, cz, lx, D / 2 + lz);
+  });
+  putAt(chairs([[3, 0, Math.PI], [3.6, 0, Math.PI], [4.2, 0, Math.PI], [-5, 0, Math.PI]], '#f4f3ef'), cx, cz, 0, D / 2 + 2.2);
+  // small stone ring in front of the terrace
+  const ring = new THREE.Group(); const sm = mat('#b8b0a2', { flatShading: true });
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, st = new THREE.Mesh(new THREE.IcosahedronGeometry(0.32, 0), sm); st.scale.y = 0.6; st.position.set(Math.cos(a) * 0.9, 0.15, Math.sin(a) * 0.9); st.castShadow = true; ring.add(st); }
+  putAt(ring, cx, cz, 0, D / 2 + 7);
+  // string lights: from the eaves out to poles on the lawn
+  const lights = new THREE.Group(); const poleM = mat('#3b3229');
+  const eave = [-9, -2, 5, 11].map(lx => L2W(cx, cz, lx, D / 2 + 1.2));
+  const poles = [[-6, 17], [4, 18], [14, 16]].map(([lx, lz]) => L2W(cx, cz, lx, D / 2 + lz));
+  const ph = 4.2, base = heightAt(cx, cz);
+  poles.forEach(([x, z]) => { const p = cyl(0.06, 0.07, ph, poleM, 6); p.position.set(x, heightAt(x, z) + ph / 2, z); lights.add(p); });
+  const V = ([x, z], y) => new THREE.Vector3(x, y, z);
+  eave.forEach((e, i) => festoonLine(lights, V(e, base + H + 0.1), V(poles[Math.min(poles.length - 1, Math.max(0, i - (i > 1 ? 1 : 0)))], base + ph - 0.1), 0.9));
+  festoonLine(lights, V(poles[0], base + ph - 0.1), V(poles[1], base + ph - 0.1), 0.7);
+  festoonLine(lights, V(poles[1], base + ph - 0.1), V(poles[2], base + ph - 0.1), 0.7);
+  scene.add(lights);
+}
+// ── The residence (stone + plank roof, same style as the lodge) ──
+{
+  const W = 14, D = 12, H = 3.4, g = new THREE.Group();
+  const walls = bx(W, H, D, texMat(STONE_TEX, W / 3, H / 3)); walls.position.y = H / 2; g.add(walls);
+  const roof = hipRoof(W, D, 3, 1, texMat(PLANK_TEX, 1, 1, { side: THREE.DoubleSide })); roof.position.y = H; g.add(roof);
+  const glass = mat('#9aa3a6', { roughness: 0.15, metalness: 0.3 });
+  for (let x = -W / 2 + 2; x < W / 2 - 1; x += 3) [D / 2 + 0.04, -D / 2 - 0.04].forEach(z => { const w = bx(1.3, 1.5, 0.05, glass); w.position.set(x, 1.6, z); g.add(w); });
+  putAt(g, -30, 7.5, 0, 0);
+}
+// ── Courtyard pavilion ──
+{
+  const g = new THREE.Group(); const m = mat('#6b5440');
+  [[-1.8, -1.8], [1.8, -1.8], [-1.8, 1.8], [1.8, 1.8]].forEach(([x, z]) => { const p = cyl(0.12, 0.12, 2.6, m, 6); p.position.set(x, 1.3, z); g.add(p); });
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(3.4, 1.8, 4), texMat(PLANK_TEX, 2, 1)); roof.rotation.y = Math.PI / 4; roof.position.y = 3.5; roof.castShadow = true; g.add(roof);
+  putAt(g, -19, 6, 0, 0);
+}
+// ── Lawn: log fire pit with log benches, thuja row, round gazebo ──
+{
+  const { cx, cz, D } = LODGE;
+  const logM = mat('#9a8a74'), stoneM = mat('#bdb5a6', { flatShading: true });
+  const fp = new THREE.Group();
+  for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2, st = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), stoneM); st.scale.set(1, 0.7, 1); st.position.set(Math.cos(a) * 0.95, 0.2, Math.sin(a) * 0.95); st.castShadow = true; fp.add(st); }
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, l = cyl(0.07, 0.09, 1.4, logM, 6); l.position.set(Math.cos(a) * 0.25, 0.5, Math.sin(a) * 0.25); l.rotation.set(Math.sin(a) * 0.45, 0, -Math.cos(a) * 0.45); fp.add(l); }
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2 + 0.3, l = cyl(0.2, 0.2, 2 + hash(i, 7) * 0.8, logM, 8); l.rotation.z = Math.PI / 2; l.rotation.y = -a; l.position.set(Math.cos(a) * 3, 0.2, Math.sin(a) * 3); fp.add(l); }
+  putAt(fp, cx, cz, 15, D / 2 + 11);
+  const thM = mat('#2e5226'), trM = mat('#4a3a2a');
+  for (let i = 0; i < 16; i++) {
+    const t = new THREE.Group(); const h = 1.6 + hash(i, 9) * 0.6;
+    const c = new THREE.Mesh(new THREE.ConeGeometry(0.42, h, 8), thM); c.position.y = h / 2 + 0.25; c.castShadow = true; t.add(c);
+    const tr = cyl(0.06, 0.06, 0.3, trM, 5); tr.position.y = 0.15; t.add(tr);
+    putAt(t, cx, cz, 4 + i * 1.6, D / 2 + 19.5);
+  }
+  const gz = new THREE.Group();
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2, p = cyl(0.09, 0.09, 2.5, mat('#5d4632'), 6); p.position.set(Math.cos(a) * 2.5, 1.25, Math.sin(a) * 2.5); gz.add(p); }
+  const groof = new THREE.Mesh(new THREE.ConeGeometry(3.5, 2.2, 10), texMat(PLANK_TEX, 3, 1)); groof.position.y = 3.5; groof.castShadow = true; gz.add(groof);
+  const floor = cyl(2.7, 2.7, 0.15, mat('#8a7a64'), 16); floor.position.y = 0.07; gz.add(floor);
+  putAt(gz, cx, cz, 27, D / 2 + 6);
+}
+// ── Two caravans by the gravel path ──
+function caravan() {
+  const g = new THREE.Group(), white = mat('#f1f1ec'), dark = mat('#3c4448', { roughness: 0.3 });
+  const body = bx(4.4, 2, 2.1, white); body.position.y = 1.4; g.add(body);
+  const roofC = bx(4.2, 0.12, 2, mat('#e3e3dc')); roofC.position.y = 2.46; g.add(roofC);
+  const stripe = bx(4.42, 0.12, 2.12, mat('#7b8a96')); stripe.position.y = 1.0; g.add(stripe);
+  [[-0.8, 1.06], [1.1, 1.06]].forEach(([x, z]) => { const w = bx(0.9, 0.55, 0.04, dark); w.position.set(x, 1.75, z); g.add(w); });
+  const front = bx(0.04, 0.5, 1.6, dark); front.position.set(2.22, 1.85, 0); g.add(front);
+  [-1.07, 1.07].forEach(z => { const wh = cyl(0.33, 0.33, 0.22, mat('#222'), 14); wh.rotation.x = Math.PI / 2; wh.position.set(-0.2, 0.33, z); g.add(wh); });
+  const hitch = bx(1.1, 0.1, 0.1, mat('#555')); hitch.position.set(2.75, 0.5, 0); g.add(hitch);
+  return g;
+}
+putAt(caravan(), 6.5, 24, 0, 0, 0, 1.75);
+putAt(caravan(), 9.5, 29.5, 0, 0, 0, 1.65);
+// ── Forest slab + small brick structure at its back edge ──
+{
+  const s = bx(22, 0.3, 16, mat('#c9c3b5')); s.position.set(SLAB[0], heightAt(...SLAB) + 0.1, SLAB[1]); s.rotation.y = ROT; scene.add(s);
+  const shed = bx(3, 2.3, 2.4, mat('#9a5a40')); putAt(shed, SLAB[0], SLAB[1], 8, -9.5); shed.position.y += 1.15;
+  const sr = bx(3.4, 0.15, 2.8, mat('#4b3b30')); putAt(sr, SLAB[0], SLAB[1], 8, -9.5); sr.position.y += 2.35;
+  // stones edging the path near the slab
+  const sm = mat('#8f8a80', { flatShading: true });
+  for (let i = 0; i < 40; i++) {
+    const t = i / 40, seg = PATH.length - 2, k = Math.min(seg, Math.floor(t * (seg + 1))), f = t * (seg + 1) - k;
+    const [ax, az] = PATH[k], [bx2, bz] = PATH[k + 1], x = ax + (bx2 - ax) * f, z = az + (bz - az) * f;
+    const dx = bx2 - ax, dz = bz - az, l = Math.hypot(dx, dz), side = i % 2 ? 1 : -1;
+    const st = new THREE.Mesh(new THREE.IcosahedronGeometry(0.22 + hash(i, 4) * 0.12, 0), sm);
+    const ex = x + (-dz / l) * 1.5 * side, ez = z + (dx / l) * 1.5 * side;
+    st.position.set(ex, heightAt(ex, ez) + 0.08, ez); st.scale.y = 0.6; scene.add(st);
+  }
+}
+
+/* --- lawn & meadow grass: instanced blades with wind; flattened under floors, paths and drawings --- */
+const MASK_N = 1024;
+const maskCanvas = document.createElement('canvas'); maskCanvas.width = maskCanvas.height = MASK_N;
+const maskCtx = maskCanvas.getContext('2d');
+const maskTex = new THREE.CanvasTexture(maskCanvas);
+const STATIC_FOOT = [ // [cx, cz, w, d, rot] in world metres — buildings, terraces, caravans, fire pit
+  [LODGE.cx, LODGE.cz, LODGE.W + 2, LODGE.D + 5, ROT], [-30, 7.5, 15, 13, ROT], [-19, 6, 5, 5, ROT],
+  [...L2W(LODGE.cx, LODGE.cz, 27, LODGE.D / 2 + 6), 6, 6, ROT], [...L2W(LODGE.cx, LODGE.cz, 15, LODGE.D / 2 + 11), 2.6, 2.6, ROT],
+  [6.5, 24, 5, 2.6, 1.75], [9.5, 29.5, 5, 2.6, 1.65],
+];
+function paintMaskRect(cx, cz, w, d, rot, v = 255) {
+  const k = MASK_N / G; maskCtx.save(); maskCtx.translate((cx - GX0) * k, (cz - GZ0) * k); maskCtx.rotate(-rot);
+  maskCtx.fillStyle = `rgb(${v},${v},${v})`; maskCtx.fillRect(-w / 2 * k, -d / 2 * k, w * k, d * k); maskCtx.restore();
+}
+function paintGrassMask() {
+  const k = MASK_N / G;
+  maskCtx.fillStyle = '#000'; maskCtx.fillRect(0, 0, MASK_N, MASK_N);
+  STATIC_FOOT.forEach(f => paintMaskRect(...f));
+  const items = Store.data.items || {};
+  for (const id in items) {
+    const it = items[id], T = TYPES[it.type]; if (!T || !T.foot) continue;
+    const [w, d, ox, oz] = T.foot, sc = it.s || 1, r = it.rot || 0;
+    const wx = it.x + (ox * Math.cos(r) + oz * Math.sin(r)) * sc, wz = it.z + (-ox * Math.sin(r) + oz * Math.cos(r)) * sc;
+    paintMaskRect(wx, wz, w * sc, d * sc, r);
+  }
+  maskCtx.lineCap = 'round'; maskCtx.lineJoin = 'round';
+  const strokes = Object.values(Store.data.strokes || {}); if (liveStroke) strokes.push(liveStroke);
+  for (const st of strokes) {
+    if (!st.pts || !st.pts.length) continue;
+    maskCtx.strokeStyle = '#ddd'; maskCtx.lineWidth = Math.max(1.5, st.w * k); maskCtx.beginPath();
+    st.pts.forEach(([x, z], i) => { const u = (x - GX0) * k, v = (z - GZ0) * k; i ? maskCtx.lineTo(u, v) : maskCtx.moveTo(u, v); });
+    if (st.pts.length === 1) { const [x, z] = st.pts[0]; maskCtx.lineTo((x - GX0) * k + 0.1, (z - GZ0) * k); }
+    maskCtx.stroke();
+  }
+  const zones = Store.data.zones || {};
+  maskCtx.setLineDash([5, 3.5]); maskCtx.lineWidth = 1.6; maskCtx.strokeStyle = '#bbb';
+  for (const id in zones) { const zn = zones[id]; maskCtx.beginPath(); maskCtx.arc((zn.x - GX0) * k, (zn.z - GZ0) * k, zn.r * k, 0, Math.PI * 2); maskCtx.stroke(); }
+  maskCtx.setLineDash([]);
+  maskTex.needsUpdate = true;
+}
+{
+  const blade = new THREE.BufferGeometry(), v = [], c = [], nrm = [], idx = [];
+  const SEG = 3;
+  for (let i = 0; i <= SEG; i++) {
+    const t = i / SEG, w = 0.5 * (1 - t * 0.8), bend = t * t * 0.35;
+    v.push(-w, t, bend, w, t, bend); const sh = 0.45 + 0.55 * t; c.push(sh, sh, sh, sh, sh, sh); nrm.push(0, 1, 0.25, 0, 1, 0.25);
+    if (i < SEG) { const a = i * 2; idx.push(a, a + 1, a + 2, a + 1, a + 3, a + 2); }
+  }
+  v.push(0, 1.12, 0.45); c.push(1, 1, 1); nrm.push(0, 1, 0.25); const tip = SEG * 2 + 2; idx.push(SEG * 2, SEG * 2 + 1, tip);
+  blade.setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); blade.setAttribute('color', new THREE.Float32BufferAttribute(c, 3));
+  blade.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3)); blade.setIndex(idx);
+  const dens = HQ ? 26 : 7;
+  const boxes = [[-38, -38, 64, 42], [-80, 74, -44, 110], [34, -41, 56, -19]];
+  const spots = [];
+  for (const [x0, z0, x1, z1] of boxes) {
+    const n = Math.round((x1 - x0) * (z1 - z0) * dens);
+    for (let i = 0; i < n; i++) {
+      const x = x0 + Math.random() * (x1 - x0), z = z0 + Math.random() * (z1 - z0);
+      if (!isLawn(x, z) || isPaved(x, z) || distPoly(ROAD, x, z) < 3.6 || distPoly(RIVER, x, z) < 8.6 || distPoly(PATH, x, z) < 1.3) continue;
+      spots.push([x, z]);
+    }
+  }
+  const mat = new THREE.MeshStandardMaterial({ vertexColors: true, side: THREE.DoubleSide, roughness: 0.92 });
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uTime = U.uTime; sh.uniforms.uMask = { value: maskTex }; sh.uniforms.uRect = { value: new THREE.Vector3(GX0, GZ0, G) };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime; uniform sampler2D uMask; uniform vec3 uRect;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        vec4 ip = instanceMatrix[3];
+        vec2 muv = (ip.xz - uRect.xy) / uRect.z;
+        float m = texture2D(uMask, vec2(muv.x, 1.0 - muv.y)).r;
+        float fade = 1.0 - smoothstep(55.0, 120.0, distance(ip.xyz, cameraPosition));
+        float gust = sin(uTime * 1.7 + ip.x * 0.21 + ip.z * 0.13) * 0.5 + 0.5;
+        transformed.z += position.y * position.y * (0.12 + 0.3 * gust) * sin(uTime * 2.3 + ip.x * 1.7 + ip.z * 1.3);
+        transformed.y *= (1.0 - m) * fade;`);
+  };
+  const grass = new THREE.InstancedMesh(blade, mat, spots.length);
+  const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), col = new THREE.Color();
+  const lush = new THREE.Color(0x5f8f34), dry = new THREE.Color(0xa59d5c), deep = new THREE.Color(0x3f6a26);
+  spots.forEach(([x, z], i) => {
+    const h = 0.13 + Math.random() * 0.17 + (Math.hypot(x + 62, z - 92) < 20 ? 0.25 : 0);
+    m4.compose(p.set(x, heightAt(x, z), z), q.setFromAxisAngle(up, Math.random() * Math.PI * 2), sc.set(0.05 + Math.random() * 0.03, h, h));
+    grass.setMatrixAt(i, m4);
+    const n = fbm(x * 1.7, z * 1.7);
+    col.copy(lush).lerp(dry, smooth(0.45, 0.8, n)).lerp(deep, Math.random() * 0.35); grass.setColorAt(i, col);
+  });
+  grass.receiveShadow = true; grass.frustumCulled = false;
+  scene.add(grass);
+}
+
+/* --- real light from string lights / lanterns / fire pits at dusk and night (nearest few) --- */
+const lightPool = Array.from({ length: 4 }, () => { const l = new THREE.PointLight(0xffc773, 0, 22, 2); scene.add(l); return l; });
+const lawnLight = new THREE.PointLight(0xffc773, 0, 30, 2); { const [x, z] = L2W(LODGE.cx, LODGE.cz, 4, LODGE.D / 2 + 9); lawnLight.position.set(x, heightAt(x, z) + 3.4, z); } scene.add(lawnLight);
+let lightFrame = 0;
+function updateLightPool() {
+  const k = TOD[state.tod].lights || 0;
+  lawnLight.intensity = k * 1.4;
+  const items = Store.data.items || {}, cand = [];
+  for (const id in items) { const it = items[id]; if (['festoon', 'lanterns', 'firepit'].includes(it.type)) cand.push([Math.hypot(it.x - camera.position.x, it.z - camera.position.z), it]); }
+  cand.sort((a, b) => a[0] - b[0]);
+  lightPool.forEach((l, i) => {
+    const c = cand[i];
+    if (!c || !k) { l.intensity = 0; return; }
+    const it = c[1], y = heightAt(it.x, it.z) + (it.type === 'festoon' ? 3.4 : it.type === 'firepit' ? 0.8 : 0.5) * (it.s || 1);
+    l.position.set(it.x, y, it.z); l.color.set(it.type === 'firepit' ? 0xff8a3a : 0xffc773);
+    l.intensity = k * (it.type === 'festoon' ? 1.2 : it.type === 'firepit' ? 1 : 0.4); l.distance = it.type === 'festoon' ? 24 : 12;
+  });
+}
+
+/* ══════════════════════════════════════════════════════════════
+   STATE + SCENE SYNC
+   ══════════════════════════════════════════════════════════════ */
+const state = { mode: 'bird', tod: 'day', tab: 'plan', tool: null, sel: null, drawColor: '#c8463d', drawW: 0.8, dragging: null };
+const itemsGroup = new THREE.Group(); scene.add(itemsGroup);
+const zonesGroup = new THREE.Group(); scene.add(zonesGroup);
+const itemObjs = {}; const zoneObjs = {};
+const labelsEl = document.getElementById('labels');
+const labels = new Map(); // key -> {el, pos}
+
+function disposeTree(o) { o.traverse(c => { if (c.geometry) c.geometry.dispose(); }); }
+function syncItems() {
+  const items = Store.data.items || {};
+  for (const id in itemObjs) if (!items[id]) { itemsGroup.remove(itemObjs[id].obj); disposeTree(itemObjs[id].obj); delete itemObjs[id]; dropLabel('i:' + id); }
+  for (const id in items) {
+    const it = items[id]; if (!TYPES[it.type]) continue;
+    if (state.dragging && state.dragging.kind === 'item' && state.dragging.id === id) continue;
+    const sig = JSON.stringify(it);
+    if (itemObjs[id] && itemObjs[id].sig === sig) continue;
+    if (itemObjs[id]) { itemsGroup.remove(itemObjs[id].obj); disposeTree(itemObjs[id].obj); }
+    const obj = TYPES[it.type].build({ ...it, color: it.color || TYPES[it.type].color });
+    obj.traverse(c => { if (c.isMesh) { c.castShadow = true; c.userData.itemId = id; } });
+    obj.userData.itemId = id;
+    placeItemObj(obj, it);
+    itemsGroup.add(obj);
+    itemObjs[id] = { obj, sig };
+    if (it.label || it.type === 'pin') setLabel('i:' + id, `<div class="in">${esc(it.label || 'Note')}</div>`, 'item', () => select('item', id));
+    else dropLabel('i:' + id);
+  }
+}
+function placeItemObj(obj, it) {
+  obj.position.set(it.x, heightAt(it.x, it.z) + 0.02, it.z);
+  obj.rotation.y = it.rot || 0;
+  obj.scale.setScalar(it.s || 1);
+}
+const headGeo = new THREE.SphereGeometry(0.7, 20, 14), poleGeo = new THREE.CylinderGeometry(0.06, 0.06, 7, 6).translate(0, 3.5, 0);
+function syncZones() {
+  const zones = Store.data.zones || {};
+  const moments = Store.data.moments || {};
+  for (const id in zoneObjs) if (!zones[id]) { zonesGroup.remove(zoneObjs[id]); delete zoneObjs[id]; dropLabel('z:' + id); }
+  for (const id in zones) {
+    const zn = zones[id];
+    let o = zoneObjs[id];
+    if (!o) {
+      o = new THREE.Group();
+      const pole = new THREE.Mesh(poleGeo, mat('#ffffff')); pole.castShadow = true; o.add(pole);
+      const head = new THREE.Mesh(headGeo, new THREE.MeshStandardMaterial({ roughness: 0.4 })); head.position.y = 7.4; head.castShadow = true; o.add(head);
+      o.children.forEach(c => c.userData.zoneId = id); o.userData.zoneId = id;
+      zonesGroup.add(o); zoneObjs[id] = o;
+    }
+    o.children[1].material.color.set(zn.color);
+    if (!(state.dragging && state.dragging.kind === 'zone' && state.dragging.id === id)) o.position.set(zn.x, heightAt(zn.x, zn.z), zn.z);
+    const ms = Object.values(moments).filter(m => m.zone === id).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+    const mo = ms.length ? `<span class="mo">${ms.map(m => esc((m.time ? m.time + ' ' : '') + m.name)).join('<br>')}</span>` : '';
+    setLabel('z:' + id, `<div class="in" style="--c:${zn.color}">${esc(zn.name)}${zn.bg && zn.bg !== zn.name ? `<span class="bg">${esc(zn.bg)}</span>` : ''}${mo}</div>`, 'zone', () => select('zone', id), zn.color);
+  }
+}
+function setLabel(key, html, kind, onClick, color) {
+  let L = labels.get(key);
+  if (!L) {
+    const el = document.createElement('div'); el.className = 'lbl ' + kind;
+    el.addEventListener('click', e => { e.stopPropagation(); L.onClick && L.onClick(); });
+    labelsEl.appendChild(el); L = { el, kind, html: '' }; labels.set(key, L);
+  }
+  if (L.html !== html) { L.el.innerHTML = html; L.html = html; }
+  L.onClick = onClick;
+  if (color) L.el.style.setProperty('--c', color);
+}
+function dropLabel(key) { const L = labels.get(key); if (L) { L.el.remove(); labels.delete(key); } }
+const span = m => m.time ? m.time + (m.end ? '–' + m.end : '') : '';
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const _v = new THREE.Vector3();
+function updateLabels() {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  const zones = Store.data.zones || {}, items = Store.data.items || {};
+  for (const [key, L] of labels) {
+    const [kind, id] = [key.slice(0, 1), key.slice(2)];
+    if (kind === 'z') { const zn = zones[id]; if (!zn) continue; const o = zoneObjs[id]; _v.set(o ? o.position.x : zn.x, (o ? o.position.y : 0) + 8.4, o ? o.position.z : zn.z); }
+    else { const o = itemObjs[id]; if (!o) continue; _v.copy(o.obj.position); _v.y += (items[id] && items[id].type === 'pin') ? 2.2 : 3.2; }
+    const dist = _v.distanceTo(camera.position);
+    _v.project(camera);
+    const hide = _v.z > 1 || _v.x < -1.2 || _v.x > 1.2 || _v.y < -1.2 || _v.y > 1.2 || (state.mode === 'walk' && dist > 140) || (kind === 'i' && dist > 160);
+    if (hide) { if (L.el.style.display !== 'none') L.el.style.display = 'none'; continue; }
+    L.el.style.display = '';
+    L.el.style.transform = `translate(${(_v.x * 0.5 + 0.5) * w}px, ${(-_v.y * 0.5 + 0.5) * h}px)`;
+    L.el.style.zIndex = String(10000 - Math.round(dist));
+    L.el.classList.toggle('sel', state.sel && ((state.sel.kind === 'zone' && kind === 'z') || (state.sel.kind === 'item' && kind === 'i')) && state.sel.id === id);
+  }
+}
+
+/* selection ring */
+const selRing = new THREE.Mesh(new THREE.RingGeometry(0.92, 1, 48), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthTest: false }));
+selRing.rotation.x = -Math.PI / 2; selRing.renderOrder = 999; selRing.visible = false; scene.add(selRing);
+const _box = new THREE.Box3(), _size = new THREE.Vector3();
+function updateSelRing() {
+  if (!state.sel) { selRing.visible = false; return; }
+  let o, r;
+  if (state.sel.kind === 'item') { o = itemObjs[state.sel.id]?.obj; if (o) { _box.setFromObject(o).getSize(_size); r = Math.max(_size.x, _size.z) / 2 + 0.6; } }
+  else { o = zoneObjs[state.sel.id]; const zn = (Store.data.zones || {})[state.sel.id]; r = zn ? zn.r : 5; }
+  if (!o) { selRing.visible = false; return; }
+  selRing.visible = true; selRing.position.set(o.position.x, o.position.y + 0.15, o.position.z); selRing.scale.setScalar(r);
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CAMERA: bird's-eye (orbit) + walk (street-view style)
+   ══════════════════════════════════════════════════════════════ */
+const EYE = 1.7;
+const walk = { yaw: 0, pitch: 0, keys: {}, joy: { x: 0, y: 0 } };
+let anim = null, controls;
+
+function flyBird(target, dist = 60, height = 45, dur = 1.3) {
+  const t = new THREE.Vector3(target.x, heightAt(target.x, target.z), target.z);
+  const dir = new THREE.Vector3().subVectors(camera.position, controls.target); dir.y = 0;
+  if (dir.lengthSq() < 1) dir.set(0.5, 0, 1); dir.normalize();
+  const p = t.clone().addScaledVector(dir, dist); p.y = t.y + height;
+  anim = { kind: 'bird', p0: camera.position.clone(), p1: p, t0: controls.target.clone(), t1: t, start: performance.now(), dur: dur * 1000 };
+}
+function flyWalk(to, lookAt, dur = 1.1) {
+  const p1 = new THREE.Vector3(to.x, heightAt(to.x, to.z) + EYE, to.z);
+  let yaw1 = walk.yaw, pitch1 = walk.pitch;
+  if (lookAt) { const dx = lookAt.x - to.x, dz = lookAt.z - to.z; yaw1 = Math.atan2(-dx, -dz);
+    const dy = (heightAt(lookAt.x, lookAt.z) + 1) - p1.y; pitch1 = Math.max(-0.5, Math.min(0.4, Math.atan2(dy, Math.hypot(dx, dz)))); }
+  let dyaw = yaw1 - walk.yaw; dyaw = Math.atan2(Math.sin(dyaw), Math.cos(dyaw));
+  anim = { kind: 'walk', p0: camera.position.clone(), p1, y0: walk.yaw, y1: walk.yaw + dyaw, q0: walk.pitch, q1: pitch1, start: performance.now(), dur: dur * 1000 };
+}
+function stepAnim(now) {
+  if (!anim) return;
+  const t = Math.min(1, (now - anim.start) / anim.dur), e = 1 - Math.pow(1 - t, 3);
+  camera.position.lerpVectors(anim.p0, anim.p1, e);
+  if (anim.kind === 'bird') { controls.target.lerpVectors(anim.t0, anim.t1, e); }
+  else {
+    // keep the hop above ground with a small arc
+    camera.position.y = Math.max(camera.position.y, heightAt(camera.position.x, camera.position.z) + EYE) + Math.sin(t * Math.PI) * 1.2;
+    walk.yaw = anim.y0 + (anim.y1 - anim.y0) * e; walk.pitch = anim.q0 + (anim.q1 - anim.q0) * e;
+  }
+  if (t >= 1) anim = null;
+}
+function setShadowSpan(r) { Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r }); sun.shadow.camera.updateProjectionMatrix(); }
+function setMode(mode, opts = {}) {
+  if (mode === state.mode && !opts.force) return;
+  state.mode = mode;
+  document.body.classList.toggle('walk', mode === 'walk');
+  document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
+  if (mode === 'walk') {
+    controls.enabled = false;
+    camera.fov = 72; camera.updateProjectionMatrix(); setShadowSpan(45);
+    const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd);
+    walk.yaw = Math.atan2(-fwd.x, -fwd.z); walk.pitch = 0;
+    const at = opts.at || { x: controls.target.x, z: controls.target.z };
+    camera.position.set(at.x, heightAt(at.x, at.z) + 30, at.z);
+    flyWalk(at, opts.look || null, 1.2);
+  } else {
+    camera.fov = 50; camera.updateProjectionMatrix(); setShadowSpan(110);
+    const fx = -Math.sin(walk.yaw), fz = -Math.cos(walk.yaw);
+    const tx = camera.position.x + fx * 15, tz = camera.position.z + fz * 15;
+    controls.target.set(tx, heightAt(tx, tz), tz);
+    controls.enabled = true;
+    anim = { kind: 'bird', p0: camera.position.clone(), p1: new THREE.Vector3(tx - fx * 55, heightAt(tx, tz) + 45, tz - fz * 55), t0: controls.target.clone(), t1: controls.target.clone(), start: performance.now(), dur: 1200 };
+  }
+  renderHelp();
+}
+
+/* ══════════════════════════════════════════════════════════════
+   POINTER: place / draw / select+drag / look / hop
+   ══════════════════════════════════════════════════════════════ */
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function setNdc(e) { const r = canvas.getBoundingClientRect(); ndc.set((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1); ray.setFromCamera(ndc, camera); }
+function groundHit(e) { setNdc(e); const h = ray.intersectObject(terrain, false)[0]; return h ? h.point : null; }
+function pickObj(e) {
+  setNdc(e);
+  const hits = ray.intersectObjects([itemsGroup, zonesGroup], true);
+  for (const h of hits) {
+    let o = h.object;
+    while (o && o.userData.itemId === undefined && o.userData.zoneId === undefined) o = o.parent;
+    if (o) return o.userData.itemId !== undefined ? { kind: 'item', id: o.userData.itemId, point: h.point } : { kind: 'zone', id: o.userData.zoneId, point: h.point };
+  }
+  return null;
+}
+let down = null;
+const pointers = new Map();
+canvas.addEventListener('pointerdown', e => {
+  pointers.set(e.pointerId, e);
+  if (pointers.size > 1) { // multi-touch → let orbit handle; cancel our gesture
+    if (down && down.act === 'draw') { liveStroke = null; groundDirty = true; }
+    down = null; if (state.mode === 'bird' && !state.dragging) controls.enabled = true; return;
+  }
+  anim = null;
+  down = { x: e.clientX, y: e.clientY, t: performance.now(), act: null, lx: e.clientX, ly: e.clientY };
+  if (state.tool === 'draw') {
+    const p = groundHit(e); if (p) { liveStroke = { pts: [[+p.x.toFixed(2), +p.z.toFixed(2)]], color: state.drawColor, w: state.drawW }; down.act = 'draw'; controls.enabled = false; groundDirty = true; }
+    return;
+  }
+  if (state.tool) { down.act = 'tool'; return; }
+  const hit = pickObj(e);
+  if (hit) {
+    const src = hit.kind === 'item' ? (Store.data.items || {})[hit.id] : (Store.data.zones || {})[hit.id];
+    if (src) {
+      select(hit.kind, hit.id);
+      const gp = groundHit(e) || hit.point;
+      state.dragging = { kind: hit.kind, id: hit.id, ox: src.x - gp.x, oz: src.z - gp.z, moved: false };
+      down.act = 'drag'; controls.enabled = false;
+      canvas.setPointerCapture(e.pointerId);
+      return;
+    }
+  }
+  down.act = state.mode === 'walk' ? 'look' : 'orbit';
+  if (state.mode === 'walk') canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (pointers.has(e.pointerId)) pointers.set(e.pointerId, e);
+  if (!down) return;
+  if (down.act === 'draw' && liveStroke) {
+    const p = groundHit(e); if (!p) return;
+    const last = liveStroke.pts[liveStroke.pts.length - 1];
+    if (Math.hypot(p.x - last[0], p.z - last[1]) > 0.35) { liveStroke.pts.push([+p.x.toFixed(2), +p.z.toFixed(2)]); groundDirty = true; }
+  } else if (down.act === 'drag') {
+    const p = groundHit(e); if (!p) return;
+    const d = state.dragging; const x = p.x + d.ox, z = p.z + d.oz; d.x = x; d.z = z;
+    if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4) d.moved = true;
+    if (d.kind === 'item') { const it = (Store.data.items || {})[d.id]; const o = itemObjs[d.id]; if (o && it) placeItemObj(o.obj, { ...it, x, z }); }
+    else { const o = zoneObjs[d.id]; if (o) o.position.set(x, heightAt(x, z), z); }
+  } else if (down.act === 'look') {
+    walk.yaw += (e.clientX - down.lx) * 0.0042; walk.pitch = Math.max(-1.2, Math.min(1.2, walk.pitch + (e.clientY - down.ly) * 0.0042));
+  }
+  down.lx = e.clientX; down.ly = e.clientY;
+});
+function endPointer(e) {
+  pointers.delete(e.pointerId);
+  if (!down) return;
+  const tap = Math.hypot(e.clientX - down.x, e.clientY - down.y) < 7 && performance.now() - down.t < 500;
+  const act = down.act; down = null;
+  if (act === 'draw') {
+    if (liveStroke && liveStroke.pts.length) Store.set('strokes/' + uid(), liveStroke);
+    liveStroke = null; groundDirty = true;
+  } else if (act === 'drag') {
+    const d = state.dragging; state.dragging = null;
+    if (d.moved && d.x !== undefined) Store.update((d.kind === 'item' ? 'items/' : 'zones/') + d.id, { x: +d.x.toFixed(2), z: +d.z.toFixed(2) });
+  } else if (act === 'tool' && tap) {
+    const p = groundHit(e); if (p) applyTool(p);
+  } else if (tap && (act === 'orbit' || act === 'look')) {
+    select(null);
+    if (state.mode === 'walk') { const p = groundHit(e); if (p && p.distanceTo(camera.position) < 120) flyWalk({ x: p.x, z: p.z }, null, 0.9); }
+  }
+  if (state.mode === 'bird') controls.enabled = true;
+}
+canvas.addEventListener('pointerup', endPointer);
+canvas.addEventListener('pointercancel', endPointer);
+canvas.addEventListener('dblclick', e => {
+  if (state.tool) return;
+  const p = groundHit(e); if (!p) return;
+  if (state.mode === 'bird') setMode('walk', { at: { x: p.x, z: p.z } });
+});
+
+controls = new OrbitControls(camera, canvas);
+controls.target.set(-2, 0, 18);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.maxPolarAngle = 1.42; controls.minDistance = 6; controls.maxDistance = 420;
+controls.screenSpacePanning = false;
+controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+
+function applyTool(p) {
+  const t = state.tool;
+  if (t.startsWith('place:')) {
+    const type = t.slice(6); const id = uid();
+    const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd);
+    const it = { type, x: +p.x.toFixed(2), z: +p.z.toFixed(2), rot: +(Math.atan2(-fwd.x, -fwd.z)).toFixed(3), s: 1, color: TYPES[type].color, label: '', note: '', t: Date.now() };
+    if (type === 'pin') it.label = 'Note';
+    Store.set('items/' + id, it);
+    select('item', id);
+  } else if (t === 'zone') {
+    const id = 'z' + uid();
+    Store.set('zones/' + id, { name: 'New place', bg: '', x: +p.x.toFixed(2), z: +p.z.toFixed(2), r: 8, color: '#4d7c8a', o: Date.now() });
+    setTool(null); select('zone', id);
+  }
+}
+
+/* keyboard */
+window.addEventListener('keydown', e => {
+  if (e.target.matches('input, textarea, select')) return;
+  walk.keys[e.code] = true;
+  if (e.code === 'Escape') { if (state.tool) setTool(null); else select(null); stopTour(); }
+  if ((e.code === 'Delete' || e.code === 'Backspace') && state.sel && state.sel.kind === 'item') { Store.set('items/' + state.sel.id, null); select(null); }
+  if (e.code === 'KeyR' && state.sel && state.sel.kind === 'item') rotateSel(e.shiftKey ? -15 : 15);
+});
+window.addEventListener('keyup', e => { walk.keys[e.code] = false; });
+window.addEventListener('blur', () => { walk.keys = {}; });
+
+/* joystick */
+{
+  const joy = document.getElementById('joy'), knob = joy.querySelector('.knob'); let id = null;
+  const move = e => { const r = joy.getBoundingClientRect(); let x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+    const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } walk.joy = { x, y }; knob.style.transform = `translate(${x * 35}px, ${y * 35}px)`; };
+  joy.addEventListener('pointerdown', e => { id = e.pointerId; joy.setPointerCapture(id); anim = null; move(e); });
+  joy.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  const end = () => { id = null; walk.joy = { x: 0, y: 0 }; knob.style.transform = ''; };
+  joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
+}
+if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+
+/* ══════════════════════════════════════════════════════════════
+   TIME OF DAY
+   ══════════════════════════════════════════════════════════════ */
+const TOD = {
+  day:    { elev: 56, az: -35,  turb: 5,  ray: 1.2, fog: 0xc3d3de, hemi: [0xdfeeff, 0x4a5a2a, 0.3],  sun: [0xfff3e2, 2.9], glow: 0.4, flame: 0.6, exp: 0.85, bloom: [0.12, 0.95], lights: 0 },
+  golden: { elev: 5,  az: -112, turb: 9,  ray: 2.8, fog: 0xd6b391, hemi: [0xffd2a0, 0x4a3a28, 0.3],  sun: [0xffa257, 2.6], glow: 1.6, flame: 1.6, exp: 0.95, bloom: [0.3, 0.85],  lights: 6 },
+  night:  { elev: 38, az: 60,   turb: 2,  ray: 0.4, fog: 0x0b1324, hemi: [0x3a4a7a, 0x0a0c12, 0.32], sun: [0x9fb2ff, 0.35], glow: 3.2, flame: 3, exp: 1.0, bloom: [0.45, 0.72], lights: 30, night: true },
+};
+let bloomPass = null;
+function setTod(k) {
+  state.tod = k; const t = TOD[k];
+  const d = updateSky(t.night ? -12 : t.elev, t.az, t.turb, t.ray);
+  sunDir.setFromSphericalCoords(1, THREE.MathUtils.degToRad(90 - t.elev), THREE.MathUtils.degToRad(t.az)); // moon at night
+  sky.visible = !t.night; stars.visible = !!t.night;
+  scene.background = t.night ? new THREE.Color(t.fog) : null;
+  if (t.night) scene.environment = null;
+  scene.fog.color.set(t.fog);
+  hemi.color.set(t.hemi[0]); hemi.groundColor.set(t.hemi[1]); hemi.intensity = t.hemi[2] * (t.night ? 1 : 1);
+  sun.color.set(t.sun[0]); sun.intensity = t.sun[1];
+  glowMat.emissiveIntensity = t.glow; flameMat.emissiveIntensity = t.flame; renderer.toneMappingExposure = t.exp;
+  if (bloomPass) { bloomPass.strength = t.bloom[0]; bloomPass.threshold = t.bloom[1]; }
+  if (window.__water) { window.__water.material.uniforms.sunDirection.value.copy(sunDir); window.__water.material.uniforms.sunColor.value.set(t.night ? 0x334466 : t.sun[0]); }
+  updateLightPool();
+  document.querySelectorAll('#todSeg button').forEach(b => b.classList.toggle('on', b.dataset.tod === k));
+}
+
+/* ══════════════════════════════════════════════════════════════
+   UI — panel, inspector, tools, tour
+   ══════════════════════════════════════════════════════════════ */
+const $ = id => document.getElementById(id);
+const panel = $('panel');
+document.querySelectorAll('.tabs button[data-tab]').forEach(b => b.onclick = () => {
+  state.tab = b.dataset.tab;
+  document.querySelectorAll('.tabs button[data-tab]').forEach(x => x.classList.toggle('on', x === b));
+  ['plan', 'places', 'sketch'].forEach(t => $('body-' + t).hidden = t !== state.tab);
+  openSheet(true); renderPanel(true);
+});
+function openSheet(v) { panel.classList.toggle('open', v); document.body.classList.toggle('sheet-open', v && innerWidth <= 760); }
+$('sheetToggle').onclick = () => openSheet(!panel.classList.contains('open'));
+document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+document.querySelectorAll('#todSeg button').forEach(b => b.onclick = () => setTod(b.dataset.tod));
+$('hintCancel').onclick = () => setTool(null);
+
+function setTool(t) {
+  state.tool = t;
+  const hint = $('hint');
+  if (!t) hint.classList.remove('show');
+  else {
+    hint.classList.add('show');
+    $('hintText').textContent = t === 'draw' ? 'Drag on the ground to draw' : t === 'zone' ? 'Tap the map to add a place' : `Tap the ground to place: ${TYPES[t.slice(6)].name}`;
+    if (innerWidth <= 760) openSheet(false);
+    select(null);
+  }
+  canvas.style.cursor = t ? 'crosshair' : '';
+  renderPanel(true);
+}
+
+let panelPending = false;
+function renderPanel(force) {
+  const ae = document.activeElement;
+  if (!force && ae && panel.contains(ae) && ae.matches('input, textarea, select')) { panelPending = true; return; }
+  panelPending = false;
+  if (state.tab === 'plan') renderPlan(); else if (state.tab === 'places') renderPlaces(); else renderSketch();
+}
+panel.addEventListener('focusout', () => setTimeout(() => { if (panelPending) renderPanel(); }, 0));
+
+function zoneOptions(sel) {
+  const zones = Store.data.zones || {};
+  return `<option value="">— choose a place —</option>` + Object.entries(zones).sort((a, b) => (a[1].o || 0) - (b[1].o || 0))
+    .map(([id, z]) => `<option value="${id}" ${id === sel ? 'selected' : ''}>${esc(z.name)}</option>`).join('');
+}
+function sortedMoments() { return Object.entries(Store.data.moments || {}).sort((a, b) => (a[1].time || '99').localeCompare(b[1].time || '99')); }
+function renderPlan() {
+  const zones = Store.data.zones || {};
+  const el = $('body-plan');
+  el.innerHTML = `
+    <h3>The day, place by place</h3>
+    <p class="sub">Choose where each part of the day happens. The pins on the map update for both of you.</p>
+    <div class="row" style="margin-bottom:10px"><button class="btn pri" id="tourBtn">Walk through the day</button><button class="btn" id="addMoment">+ Add moment</button></div>
+    ${sortedMoments().map(([id, m]) => `
+      <div class="moment" style="--c:${zones[m.zone]?.color || 'var(--border)'}" data-id="${id}">
+        <div class="row"><input type="text" value="${esc(m.name)}" data-f="name" aria-label="Moment"><button class="x" data-del title="Remove">×</button></div>
+        <div class="row"><input type="time" value="${esc(m.time)}" data-f="time" aria-label="Start"><span class="dash">–</span><input type="time" value="${esc(m.end)}" data-f="end" aria-label="End"></div>
+        <div class="row"><select data-f="zone" aria-label="Place">${zoneOptions(m.zone)}</select>${m.zone ? `<button class="btn sm" data-go>View</button>` : ''}</div>
+        <textarea data-f="note" placeholder="Notes — decor, who's in charge, rain plan…">${esc(m.note)}</textarea>
+      </div>`).join('')}
+    <p class="sub" style="margin-top:10px">Draft programme. Moments without a place are left out of the walkthrough.</p>`;
+  $('tourBtn').onclick = startTour;
+  $('addMoment').onclick = () => Store.set('moments/' + uid(), { name: 'New moment', time: '', end: '', zone: '', note: '' });
+  el.querySelectorAll('.moment').forEach(card => {
+    const id = card.dataset.id;
+    card.querySelectorAll('[data-f]').forEach(inp => inp.onchange = () => Store.update('moments/' + id, { [inp.dataset.f]: inp.value }));
+    card.querySelector('[data-del]').onclick = () => { if (confirm('Remove this moment?')) Store.set('moments/' + id, null); };
+    const go = card.querySelector('[data-go]'); if (go) go.onclick = () => focusZone(Store.data.moments[id].zone);
+  });
+}
+function renderPlaces() {
+  const zones = Store.data.zones || {}, moments = Store.data.moments || {};
+  const el = $('body-places');
+  el.innerHTML = `
+    <h3>Places at the venue</h3>
+    <p class="sub">Positions are traced from the satellite and drone photos and are approximate — drag a pin on the map to correct it.</p>
+    ${Object.entries(zones).sort((a, b) => (a[1].o || 0) - (b[1].o || 0)).map(([id, z]) => {
+      const ms = Object.values(moments).filter(m => m.zone === id).sort((a, b) => (a.time || '').localeCompare(b.time || ''));
+      return `<div class="zone" data-id="${id}"><span class="dot" style="--c:${z.color}"></span>
+        <div class="nm"><b>${esc(z.name)}</b>${z.bg ? `<small>${esc(z.bg)}</small>` : ''}${ms.length ? `<div class="chips">${ms.map(m => `<span class="chip">${esc(m.time ? m.time + ' · ' : '')}${esc(m.name)}</span>`).join('')}</div>` : ''}</div>
+        <button class="btn sm" data-fly>Fly</button><button class="btn sm" data-walk>Stand</button></div>`; }).join('')}
+    <div class="row" style="margin-top:10px"><button class="btn ${state.tool === 'zone' ? 'on' : ''}" id="addZone">+ Add a place</button></div>
+    <hr>
+    <div class="grp">Reference photo</div>
+    <p class="sub">Load the Google satellite screenshot (2000 × 1151) to lay it over the ground and check the layout. It stays on this device only.</p>
+    <div class="row"><button class="btn" id="ovLoad">${overlayImg ? 'Replace image' : 'Load image'}</button>${overlayImg ? `<button class="btn" id="ovClear">Remove</button>` : ''}</div>
+    ${overlayImg ? `<label class="f">Opacity</label><input type="range" min="0.1" max="1" step="0.05" value="${overlayAlpha}" id="ovAlpha" style="width:100%">` : ''}`;
+  el.querySelectorAll('.zone').forEach(r => {
+    const id = r.dataset.id;
+    r.querySelector('[data-fly]').onclick = e => { e.stopPropagation(); focusZone(id); };
+    r.querySelector('[data-walk]').onclick = e => { e.stopPropagation(); standAt(id); };
+    r.onclick = () => { select('zone', id); focusZone(id); };
+  });
+  $('addZone').onclick = () => setTool(state.tool === 'zone' ? null : 'zone');
+  $('ovLoad').onclick = () => $('overlayFile').click();
+  if ($('ovClear')) $('ovClear').onclick = () => { overlayImg = null; try { localStorage.removeItem('venue-overlay'); } catch {} groundDirty = true; renderPanel(true); };
+  if ($('ovAlpha')) $('ovAlpha').oninput = e => { overlayAlpha = +e.target.value; groundDirty = true; try { localStorage.setItem('venue-overlay-alpha', overlayAlpha); } catch {} };
+}
+const DRAW_COLORS = ['#c8463d', '#e7b9b4', '#f4f1ea', '#d9a93a', '#3f7f9a', '#2f6b4f', '#2a2a2a'];
+function renderSketch() {
+  const items = Store.data.items || {}, strokes = Store.data.strokes || {};
+  const groups = {};
+  for (const [k, t] of Object.entries(TYPES)) (groups[t.group] = groups[t.group] || []).push([k, t]);
+  const el = $('body-sketch');
+  el.innerHTML = `
+    <h3>Decorate &amp; sketch</h3>
+    <p class="sub">Pick an item, then tap the ground to place it. Drag items to move them; tap one to rotate, recolour, label or note it.</p>
+    ${Object.entries(groups).map(([g, list]) => `<div class="grp">${g}</div><div class="palette">${list.map(([k, t]) =>
+      `<button data-type="${k}" class="${state.tool === 'place:' + k ? 'on' : ''}"><i style="--c:${t.color}"></i>${t.name}</button>`).join('')}</div>`).join('')}
+    <div class="grp">Draw on the ground</div>
+    <div class="row" style="flex-wrap:wrap"><button class="btn ${state.tool === 'draw' ? 'on' : ''}" id="drawBtn">${state.tool === 'draw' ? 'Drawing…' : 'Pen'}</button>
+      <div class="swatches">${DRAW_COLORS.map(c => `<button style="--c:${c}" data-c="${c}" class="${state.drawColor === c ? 'on' : ''}" aria-label="Colour ${c}"></button>`).join('')}</div></div>
+    <div class="row" style="margin-top:8px"><label class="f" style="margin:0">Width</label><input type="range" min="0.3" max="3" step="0.1" value="${state.drawW}" id="drawW" style="flex:1"></div>
+    <div class="row" style="margin-top:8px"><button class="btn sm" id="undoStroke" ${Object.keys(strokes).length ? '' : 'disabled'}>Undo last line</button><button class="btn sm danger" id="clearStrokes" ${Object.keys(strokes).length ? '' : 'disabled'}>Clear drawings</button></div>
+    <hr>
+    <div class="grp">On the map (${Object.keys(items).length})</div>
+    ${Object.entries(items).sort((a, b) => (b[1].t || 0) - (a[1].t || 0)).map(([id, it]) => `<div class="list-item" data-id="${id}"><span class="dot" style="--c:${it.color || TYPES[it.type]?.color}"></span><span>${esc(it.label || TYPES[it.type]?.name || it.type)}${it.note ? ' — ' + esc(it.note) : ''}</span></div>`).join('') || '<p class="sub">Nothing placed yet.</p>'}
+    ${Object.keys(items).length ? `<div class="row" style="margin-top:8px"><button class="btn sm danger" id="clearItems">Remove all items</button></div>` : ''}`;
+  el.querySelectorAll('.palette button').forEach(b => b.onclick = () => setTool(state.tool === 'place:' + b.dataset.type ? null : 'place:' + b.dataset.type));
+  $('drawBtn').onclick = () => setTool(state.tool === 'draw' ? null : 'draw');
+  el.querySelectorAll('.swatches button').forEach(b => b.onclick = () => { state.drawColor = b.dataset.c; if (state.tool !== 'draw') setTool('draw'); else renderPanel(true); });
+  $('drawW').oninput = e => { state.drawW = +e.target.value; };
+  $('undoStroke').onclick = () => { const ks = Object.keys(Store.data.strokes || {}).sort(); if (ks.length) Store.set('strokes/' + ks[ks.length - 1], null); };
+  $('clearStrokes').onclick = () => { if (confirm('Clear all drawings for both of you?')) Store.set('strokes', null); };
+  if ($('clearItems')) $('clearItems').onclick = () => { if (confirm('Remove every decoration item for both of you?')) { Store.set('items', null); select(null); } };
+  el.querySelectorAll('.list-item').forEach(r => r.onclick = () => { select('item', r.dataset.id); const it = Store.data.items[r.dataset.id]; if (state.mode === 'bird') flyBird(it, 18, 14); else flyWalk({ x: it.x + 5, z: it.z + 5 }, it); });
+}
+
+function focusZone(id) {
+  const z = (Store.data.zones || {})[id]; if (!z) return;
+  if (state.mode === 'walk') standAt(id); else flyBird(z, z.r * 2.2 + 22, z.r * 1.6 + 20);
+}
+function standAt(id) {
+  const z = (Store.data.zones || {})[id]; if (!z) return;
+  // stand at the edge of the area, on the side facing the current camera
+  let dx = camera.position.x - z.x, dz = camera.position.z - z.z; const l = Math.hypot(dx, dz) || 1; dx /= l; dz /= l;
+  const at = { x: z.x + dx * (z.r + 3), z: z.z + dz * (z.r + 3) };
+  if (state.mode !== 'walk') setMode('walk', { at, look: z }); else flyWalk(at, z, 1.4);
+}
+
+function select(kind, id) {
+  state.sel = kind ? { kind, id } : null;
+  renderInspector();
+}
+function rotateSel(deg) { const it = Store.data.items[state.sel.id]; if (it) Store.update('items/' + state.sel.id, { rot: +(((it.rot || 0) + deg * Math.PI / 180)).toFixed(4) }); }
+function renderInspector() {
+  const el = $('inspector');
+  if (!state.sel) { el.classList.remove('show'); $('help').style.visibility = ''; return; }
+  $('help').style.visibility = 'hidden';
+  const { kind, id } = state.sel;
+  if (kind === 'item') {
+    const it = (Store.data.items || {})[id]; if (!it) { el.classList.remove('show'); return; }
+    const T = TYPES[it.type];
+    el.innerHTML = `<h4><span class="dot" style="--c:${it.color || T.color}"></span><span style="flex:1">${esc(T.name)}</span><button class="x" id="insClose">×</button></h4>
+      <input type="text" id="insLabel" placeholder="${it.type === 'sign' ? 'Text on the sign' : 'Label (optional)'}" value="${esc(it.label)}">
+      <label class="f">Note</label><textarea id="insNote" placeholder="Supplier, quantity, colours, price…">${esc(it.note)}</textarea>
+      <div class="grid">
+        <button class="btn sm" id="rotL" title="Rotate left">⟲ 15°</button><button class="btn sm" id="rotR" title="Rotate right">⟳ 15°</button>
+        <button class="btn sm" id="scD" title="Smaller">−</button><button class="btn sm" id="scU" title="Bigger">+</button>
+      </div>
+      <div class="row" style="margin-top:8px"><input type="color" id="insColor" value="${it.color || T.color}" style="width:44px;height:32px;border:0;background:none;padding:0" title="Colour">
+        <button class="btn sm" id="insDup">Duplicate</button><button class="btn sm danger" id="insDel">Delete</button></div>`;
+    $('insLabel').onchange = e => Store.update('items/' + id, { label: e.target.value });
+    $('insNote').onchange = e => Store.update('items/' + id, { note: e.target.value });
+    $('insColor').onchange = e => Store.update('items/' + id, { color: e.target.value });
+    $('rotL').onclick = () => rotateSel(15); $('rotR').onclick = () => rotateSel(-15);
+    $('scD').onclick = () => Store.update('items/' + id, { s: Math.max(0.3, +((it.s || 1) - 0.1).toFixed(2)) });
+    $('scU').onclick = () => Store.update('items/' + id, { s: Math.min(4, +((it.s || 1) + 0.1).toFixed(2)) });
+    $('insDup').onclick = () => { const nid = uid(); Store.set('items/' + nid, { ...it, x: it.x + 2.5, z: it.z + 2.5, t: Date.now() }); select('item', nid); };
+    $('insDel').onclick = () => { Store.set('items/' + id, null); select(null); };
+  } else {
+    const z = (Store.data.zones || {})[id]; if (!z) { el.classList.remove('show'); return; }
+    el.innerHTML = `<h4><span class="dot" style="--c:${z.color}"></span><span style="flex:1">Place</span><button class="x" id="insClose">×</button></h4>
+      <input type="text" id="zName" value="${esc(z.name)}" aria-label="Name">
+      <label class="f">Second name (e.g. Bulgarian)</label><input type="text" id="zBg" value="${esc(z.bg)}">
+      <div class="row" style="margin-top:8px"><input type="color" id="zColor" value="${z.color}" style="width:44px;height:32px;border:0;background:none;padding:0" title="Colour">
+        <span style="font-size:12px;color:var(--muted)">Area</span><button class="btn sm" id="zRd">−</button><button class="btn sm" id="zRu">+</button></div>
+      <div class="row" style="margin-top:8px"><button class="btn sm" id="zFly">Fly here</button><button class="btn sm" id="zStand">Stand here</button><button class="btn sm danger" id="zDel">Delete</button></div>
+      <p class="sub" style="margin:8px 0 0">Drag the pin on the map to move it.</p>`;
+    $('zName').onchange = e => Store.update('zones/' + id, { name: e.target.value });
+    $('zBg').onchange = e => Store.update('zones/' + id, { bg: e.target.value });
+    $('zColor').onchange = e => Store.update('zones/' + id, { color: e.target.value });
+    $('zRd').onclick = () => Store.update('zones/' + id, { r: Math.max(2, z.r - 1) });
+    $('zRu').onclick = () => Store.update('zones/' + id, { r: Math.min(60, z.r + 1) });
+    $('zFly').onclick = () => focusZone(id); $('zStand').onclick = () => standAt(id);
+    $('zDel').onclick = () => {
+      if (!confirm(`Delete “${z.name}”? Moments using it will lose their place.`)) return;
+      Store.set('zones/' + id, null); select(null);
+    };
+  }
+  $('insClose').onclick = () => select(null);
+  el.classList.add('show');
+}
+
+function renderHelp() {
+  $('help').innerHTML = state.mode === 'bird'
+    ? '<b>Bird’s-eye</b> · drag to orbit · right-drag / two fingers to pan · scroll / pinch to zoom · double-click the ground to stand there'
+    : '<b>Walk</b> · drag to look around · WASD / arrows to walk (Shift = faster) · click the ground to step there';
+}
+
+/* tour */
+const tour = { list: [], i: 0, timer: null };
+function startTour() {
+  const zones = Store.data.zones || {};
+  tour.list = sortedMoments().map(([, m]) => m).filter(m => zones[m.zone]);
+  if (!tour.list.length) { alert('Assign a place to at least one moment first.'); return; }
+  tour.i = -1; if (innerWidth <= 760) openSheet(false); nextTour();
+}
+function nextTour() {
+  clearTimeout(tour.timer);
+  tour.i++;
+  if (tour.i >= tour.list.length) return stopTour();
+  const m = tour.list[tour.i], z = Store.data.zones[m.zone];
+  $('tourTime').textContent = span(m) || '—'; $('tourName').textContent = m.name; $('tourZone').textContent = z.name;
+  $('tour').classList.add('show');
+  if (state.mode === 'walk') standAt(m.zone); else flyBird(z, z.r * 2 + 20, z.r * 1.4 + 16, 1.8);
+  tour.timer = setTimeout(nextTour, 5200);
+}
+function stopTour() { clearTimeout(tour.timer); $('tour').classList.remove('show'); }
+$('tourNext').onclick = nextTour; $('tourStop').onclick = stopTour;
+
+/* overlay */
+$('overlayFile').onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { loadOverlay(r.result, true); };
+  r.readAsDataURL(f); e.target.value = '';
+};
+function loadOverlay(src, persist) {
+  const img = new Image();
+  img.onload = () => { overlayImg = img; groundDirty = true; renderPanel(true);
+    if (persist) { try { localStorage.setItem('venue-overlay', src); } catch { /* too big for local storage — still shown this session */ } } };
+  img.src = src;
+}
+try { const s = localStorage.getItem('venue-overlay'); if (s) loadOverlay(s, false); const a = localStorage.getItem('venue-overlay-alpha'); if (a) overlayAlpha = +a; } catch {}
+
+/* ══════════════════════════════════════════════════════════════
+   DATA → SCENE
+   ══════════════════════════════════════════════════════════════ */
+let seeded = false;
+Store.on(data => {
+  if (!seeded) {
+    seeded = true;
+    if (!data.zones) Store.set('zones', ZONE_SEED);
+    if (!data.moments || isOldSeed(data.moments)) Store.set('moments', MOMENT_SEED);
+    $('loading').classList.add('gone');
+  }
+  syncZones(); syncItems(); groundDirty = true;
+  renderPanel(); if (state.sel) {
+    const exists = state.sel.kind === 'item' ? (data.items || {})[state.sel.id] : (data.zones || {})[state.sel.id];
+    if (!exists) select(null); else if (!document.activeElement || !$('inspector').contains(document.activeElement)) renderInspector();
+  }
+});
+
+/* ══════════════════════════════════════════════════════════════
+   LOOP
+   ══════════════════════════════════════════════════════════════ */
+const composer = HQ ? new EffectComposer(renderer, new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 })) : null;
+if (composer) {
+  composer.addPass(new RenderPass(scene, camera));
+  bloomPass = new UnrealBloomPass(new THREE.Vector2(512, 512), 0.12, 0.5, 0.95); composer.addPass(bloomPass);
+  composer.addPass(new OutputPass());
+}
+function resize() {
+  const w = innerWidth, h = innerHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  if (composer) { composer.setPixelRatio(renderer.getPixelRatio()); composer.setSize(w, h); }
+}
+addEventListener('resize', resize); resize();
+if (innerWidth / innerHeight < 1) camera.position.set(55, 260, 170); // portrait phones: start further out
+setTod('day'); renderHelp(); renderPanel(true);
+$('qualityBtn').textContent = HQ ? 'Quality: high' : 'Quality: fast';
+$('qualityBtn').onclick = () => { try { localStorage.setItem('venue-quality', HQ ? 'low' : 'high'); } catch {} location.reload(); };
+
+const clock = new THREE.Clock();
+if (new URLSearchParams(location.search).has('paused')) state.paused = true; // testing hook
+function tick() {
+  if (!state.paused) tickBody();
+  requestAnimationFrame(tick);
+}
+function tickBody() {
+  const dt = Math.min(0.05, clock.getDelta()), now = performance.now();
+  stepAnim(now);
+  if (state.mode === 'walk') {
+    if (!anim) {
+      const k = walk.keys, sp = (k.ShiftLeft || k.ShiftRight ? 11 : 4) * dt;
+      let f = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0) - walk.joy.y;
+      let s = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0) + walk.joy.x;
+      if (f || s) {
+        const fx = -Math.sin(walk.yaw), fz = -Math.cos(walk.yaw);
+        camera.position.x = Math.max(GX0 + 5, Math.min(GX0 + G - 5, camera.position.x + (fx * f + -fz * s) * sp));
+        camera.position.z = Math.max(GZ0 + 5, Math.min(GZ0 + G - 5, camera.position.z + (fz * f + fx * s) * sp));
+      }
+      camera.position.y = heightAt(camera.position.x, camera.position.z) + EYE;
+    }
+    camera.rotation.set(walk.pitch, walk.yaw, 0, 'YXZ');
+  } else {
+    controls.update();
+    if (camera.position.y < heightAt(camera.position.x, camera.position.z) + 2) camera.position.y = heightAt(camera.position.x, camera.position.z) + 2;
+  }
+  // keep the shadow frustum around what we're looking at
+  const focus = state.mode === 'bird' ? controls.target : camera.position;
+  sun.target.position.set(focus.x, 0, focus.z);
+  sun.position.set(focus.x + sunDir.x * 300, Math.max(20, sunDir.y * 300), focus.z + sunDir.z * 300);
+  U.uTime.value += dt;
+  if (window.__water) window.__water.material.uniforms.time.value += dt * 0.5;
+  if (++lightFrame % 30 === 0) updateLightPool();
+  if (groundDirty) drawGround();
+  updateSelRing();
+  if (composer) composer.render(); else renderer.render(scene, camera);
+  updateLabels();
+}
+tick();
+window.__venue = { Store, state, setMode, setTod, setTool, applyTool, select, camera, controls, TYPES, heightAt, scene, renderer,
+  // debug/testing: advance animations and render one frame synchronously
+  frame() { stepAnim(performance.now() + 1e7); tickBody(); },
+};
+</script>
+</body>
+</html>
