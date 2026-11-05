@@ -1,42 +1,22 @@
 # Session Brief — solid-sniffle
 
-**Date:** 2026-09-03
-**Status:** Budget & Expenses tracker implemented and pushed to
-`claude/new-session-92z1p5`. Awaiting live verification against the real
-Firebase room.
+**Date:** 2026-11-05
+**Status:** Invite + RSVP phase 1 built on `claude/nifty-einstein-gvgcxg`. Draft content; not yet tested against the real Firebase DB.
 
 ## Context
-`solid-sniffle` is two things layered together: the product — a single-file
-wedding tracker (`index.html`, Tailwind CDN, Firebase Realtime DB, no build
-step) — and Borislav's repo-scoped Agentic OS config under `.claude/`.
+`solid-sniffle` = the couple's wedding tracker (`index.html`, vanilla + Firebase RTDB) + the Agentic OS config under `.claude/`. Decisions for the invite live in the Claude Doc "Одит Svatbichka + EventLink и tech stack" (https://claude.ai/artifact/6BBqPThw3qZj4v4FDrgZii).
 
 ## Latest
-Multiple budget builds now coexist: switch between them, duplicate one to try a
-different venue, mark one as the main plan (the only one tracking real
-payments), and compare them in a category-by-scenario table with a Spread
-column. Pre-scenario data migrates into a "Main plan" scenario on load.
-49/49 checks green (17 scenario, 17 acceptance, 15 regression).
-
-## Last Session
-- Built the whole Budget spec as a fourth view in `index.html`: dashboard,
-  categories with planned amounts, expenses with fixed/per-unit pricing,
-  multi-payment tracking, overspend colour bands, dark mode, mobile layout.
-- Adapted the spec's assumed React + Firestore stack to the app's real
-  single-file vanilla + Realtime DB architecture — logged in `decisions.md`.
-- Wrote a headless-browser acceptance suite (in-memory Firebase mock, so the
-  couple's live DB was untouched): 17/17 passing, covering all 10 acceptance
-  criteria. The suite lives in the session scratchpad, not in the repo.
+- `invite/index.html` — public invite + RSVP; `invite/admin.html` — +1 allow-list, responses, CSV; `invite/name-key.js` — shared name matching.
+- Data path: `invites/bn-2027/{responses,plusOne,plusOneNames}` — separate from the tracker room.
+- 36/36 headless checks with a mock backend (suite lived in the session scratchpad, not committed).
 
 ## Next Session
-- Have Bobby open the Budget tab against the real room and confirm the seed
-  categories, layout and Tailwind styling look right — the sandbox proxy blocks
-  the Tailwind and Fonts CDNs, so visual rendering is the one thing not verified.
-- Decide whether the acceptance suite + Firebase mock should be committed to the
-  repo (it currently only exists in the scratchpad, which is discarded).
-- Open question from the spec: §5 asks for auth-restricted access for Bobby and
-  Nikol. The app has no auth today; the room id is the only secret. Nothing was
-  added — decide whether that matters before the budget holds real vendor data.
+- Replace DRAFT content in the CONFIG block of `invite/index.html` (times, venue, address/map link, dress code, stay, gifts, letter), then set `draft: false` and regenerate `og.png`.
+- Set RTDB rules: `responses` write-only for the public, `plusOne/$hash` readable per key only, admin paths behind auth. Without them anyone with the DB URL can read replies.
+- Test one real submission on the deployed page; the sandbox could not reach Firebase.
+- Custom domain: update absolute `og:image` / `og:url`.
 
 ## Open Questions
-- Should `NAVIGATION.md` be regenerated? `index.html` grew by ~700 lines and now
-  has a fourth view its map doesn't mention.
+- Commit the e2e suite + mock to the repo (outside the public `invite/` folder)?
+- Background music and photo gallery are in the doc's feature list but have no assets yet.
