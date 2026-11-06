@@ -226,6 +226,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { Sky } from 'three/addons/objects/Sky.js';
 import { Water } from 'three/addons/objects/Water.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -593,16 +595,63 @@ terrainGeo.translate(GX0 + G / 2, 0, GZ0 + G / 2);
   for (let i = 0; i < p.count; i++) p.setY(i, heightAt(p.getX(i), p.getZ(i)));
   terrainGeo.computeVertexNormals();
 }
+/* photographed CC0 assets from Poly Haven (polyhaven.com) in venue-assets/ */
+const ASSET = 'venue-assets/';
+const texLoader = new THREE.TextureLoader();
+function photoTex(name, rx = 1, ry = 1, srgb = true, onLoad) {
+  const t = texLoader.load(ASSET + 'tex/' + name, onLoad);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rx, ry); t.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+/* ground "splat map": which photographed surface shows where (r = grass, g = forest floor, b = gravel) */
+const SPLAT_N = 512;
+const splatCanvas = document.createElement('canvas'); splatCanvas.width = splatCanvas.height = SPLAT_N;
+{
+  const x = splatCanvas.getContext('2d'), img = x.createImageData(SPLAT_N, SPLAT_N);
+  for (let j = 0; j < SPLAT_N; j++) for (let i = 0; i < SPLAT_N; i++) {
+    const wx = GX0 + (i + 0.5) / SPLAT_N * G, wz = GZ0 + (j + 0.5) / SPLAT_N * G, o = (j * SPLAT_N + i) * 4;
+    const dRoad = distPoly(ROAD, wx, wz), dRiv = distPoly(RIVER, wx, wz);
+    let r = 0, g = 0, b = 0;
+    if (dRiv < 8.5 || dRoad < 2.6 || isPaved(wx, wz)) { /* water, rocks, asphalt, concrete: keep painted */ }
+    else if (dRoad < 3.4 || distPoly(PATH, wx, wz) < 1.3) b = 255;
+    else if (isLawn(wx, wz) || isMeadow(wx, wz)) r = 255;
+    else g = 255;
+    img.data[o] = r; img.data[o + 1] = g; img.data[o + 2] = b; img.data[o + 3] = 255;
+  }
+  x.putImageData(img, 0, 0);
+}
+const splatTex = new THREE.CanvasTexture(splatCanvas);
+let photoReady = 0;
+const PHOTO_U = { uPhoto: { value: 0 } };
+const groundPhotos = {
+  grass: photoTex('leafy_grass_diff_1k.jpg', 1, 1, true, () => { if (++photoReady === 3) PHOTO_U.uPhoto.value = 1; }),
+  forest: photoTex('leaves_forest_ground_diff_1k.jpg', 1, 1, true, () => { if (++photoReady === 3) PHOTO_U.uPhoto.value = 1; }),
+  gravel: photoTex('sandy_gravel_diff_1k.jpg', 1, 1, true, () => { if (++photoReady === 3) PHOTO_U.uPhoto.value = 1; }),
+};
 const terrainMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.97, normalMap: detailNormal, normalScale: new THREE.Vector2(0.9, 0.9) });
 {
   const nm = detailNormal.clone(); nm.needsUpdate = true; nm.repeat.set(G / 2.5, G / 2.5); terrainMat.normalMap = nm;
   terrainMat.onBeforeCompile = sh => {
     sh.uniforms.detailMap = { value: detailGray };
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D detailMap;')
+    sh.uniforms.splatMap = { value: splatTex }; sh.uniforms.uPhoto = PHOTO_U.uPhoto;
+    sh.uniforms.pGrass = { value: groundPhotos.grass }; sh.uniforms.pForest = { value: groundPhotos.forest }; sh.uniforms.pGravel = { value: groundPhotos.gravel };
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D detailMap, splatMap, pGrass, pForest, pGravel; uniform float uPhoto;')
       .replace('#include <map_fragment>', `#include <map_fragment>
         float dA = texture2D(detailMap, vMapUv * 240.0).r;
         float dB = texture2D(detailMap, vMapUv * 31.0 + 0.37).r;
-        diffuseColor.rgb *= (0.70 + 0.55 * dA) * (0.84 + 0.32 * dB);`);
+        vec3 noiseDetail = vec3((0.70 + 0.55 * dA) * (0.84 + 0.32 * dB));
+        // photographed surface detail, normalised by each photo's average colour so the painted
+        // colours (lawn vs dry meadow, shade, drawings, place outlines) are kept
+        vec4 w = texture2D(splatMap, vMapUv);
+        vec2 wuv = vMapUv * ${G.toFixed(1)};
+        vec3 pg = texture2D(pGrass, wuv / 2.0).rgb / max(textureLod(pGrass, vec2(0.5), 12.0).rgb, vec3(0.02));
+        vec3 pf = texture2D(pForest, wuv / 1.26).rgb / max(textureLod(pForest, vec2(0.5), 12.0).rgb, vec3(0.02));
+        vec3 pv = texture2D(pGravel, wuv / 2.1).rgb / max(textureLod(pGravel, vec2(0.5), 12.0).rgb, vec3(0.02));
+        float ws = clamp(w.r + w.g + w.b, 0.0, 1.0) * uPhoto;
+        vec3 photo = (w.r * pg + w.g * pf + w.b * pv) / max(w.r + w.g + w.b, 0.001);
+        // photos up close, smooth painted colours far away (avoids tiling shimmer from above)
+        float near = 1.0 - smoothstep(60.0, 160.0, length(vViewPosition));
+        diffuseColor.rgb *= mix(noiseDetail, clamp(photo, 0.25, 2.2) * mix(vec3(1.0), noiseDetail, 0.35), ws * near);`);
   };
 }
 const terrain = new THREE.Mesh(terrainGeo, terrainMat);
@@ -751,7 +800,7 @@ let TREES = null, splatLayer = null; // set below
   const coreGeo = new THREE.IcosahedronGeometry(0.72, 1);
   const leafGeo = crownGeometry(HQ ? 26 : 12);
   const nCrowns = spots.length * 2;
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, map: barkTex, normalMap: detailNormal }), spots.length);
+  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.95, map: photoTex('bark_brown_02_diff_1k.jpg', 2, 6), normalMap: photoTex('bark_brown_02_nor_gl_1k.jpg', 2, 6, false) }), spots.length);
   const leafMat = new THREE.MeshStandardMaterial({ map: leafTex, alphaTest: 0.5, side: THREE.DoubleSide, vertexColors: true, roughness: 0.8 });
   leafMat.onBeforeCompile = sh => wind(sh, 0.035);
   const coreMat = new THREE.MeshStandardMaterial({ color: 0x1d3316, roughness: 1 });
@@ -768,7 +817,7 @@ let TREES = null, splatLayer = null; // set below
     const H = beech ? 17 + hash(x, z * 2) * 8 : 9 + hash(x, z * 2) * 9, y = heightAt(x, z) - 0.3;
     const lift = beech ? 0.22 : 0;
     m4.compose(p.set(x, y, z), q.setFromAxisAngle(p.clone().set(0, 1, 0), hash(x, z) * 6), s.set(beech ? 1.5 : 1.1, H * (0.5 + lift), beech ? 1.5 : 1.1)); trunks.setMatrixAt(i, m4);
-    trunks.setColorAt(i, col.setHex(beech ? 0x77746a : 0x5a4a3a));
+    trunks.setColorAt(i, col.setHex(beech ? 0xc9c6bc : 0xa08d78)); // tints the bark photo: beech grey, others brown
     const R = H * (beech ? 0.21 : 0.19 + hash(z, x * 2) * 0.07);
     for (let k = 0; k < 2; k++) {
       const ox = (hash(x + k, z) - 0.5) * R * 0.7, oz = (hash(x, z + k) - 0.5) * R * 0.7;
@@ -981,6 +1030,9 @@ const PLANK_TEX = canvasTex((x, N) => {
     for (let j = 0; j < 4; j++) { x.fillStyle = 'rgba(0,0,0,.25)'; x.fillRect(i, hash(i, j) * N, 8, 1); }
   }
 });
+function stoneMat(w, h) { // rustic stone wall photo, 1.5 m per tile
+  return new THREE.MeshStandardMaterial({ map: photoTex('rustic_stone_wall_02_diff_1k.jpg', w / 1.5, h / 1.5), normalMap: photoTex('rustic_stone_wall_02_nor_gl_1k.jpg', w / 1.5, h / 1.5, false), roughness: 0.92 });
+}
 function texMat(base, rx, ry, extra = {}) { const t = base.clone(); t.needsUpdate = true; t.repeat.set(rx, ry); return new THREE.MeshStandardMaterial({ map: t, roughness: 0.95, ...extra }); }
 const L2W = (cx, cz, lx, lz, r = ROT) => [cx + lx * Math.cos(r) + lz * Math.sin(r), cz - lx * Math.sin(r) + lz * Math.cos(r)];
 function putAt(obj, cx, cz, lx, lz, rotY = 0, r = ROT) {
@@ -1009,9 +1061,9 @@ function festoonLine(group, a, b, sag = 0.7, step = 0.8) {
 const LODGE = { cx: -8, cz: -14, W: 26, D: 8, H: 2.9 };
 {
   const { cx, cz, W, D, H } = LODGE, g = new THREE.Group();
-  const walls = bx(W, H, D, texMat(STONE_TEX, W / 3, H / 3)); walls.position.y = H / 2; g.add(walls);
+  const walls = bx(W, H, D, stoneMat(W, H)); walls.position.y = H / 2; g.add(walls);
   const roof = hipRoof(W, D, 2.2, 1.3, texMat(PLANK_TEX, 1, 1, { side: THREE.DoubleSide, roughness: 0.9 })); roof.position.y = H; g.add(roof);
-  const chim = bx(0.9, 2, 0.9, texMat(STONE_TEX, 0.4, 0.6)); chim.position.set(-W / 2 + 6, H + 2, -0.6); g.add(chim);
+  const chim = bx(0.9, 2, 0.9, stoneMat(0.9, 2)); chim.position.set(-W / 2 + 6, H + 2, -0.6); g.add(chim);
   const cap = bx(1.1, 0.12, 1.1, mat('#3d3833')); cap.position.set(-W / 2 + 6, H + 3.05, -0.6); g.add(cap);
   // glazed front: tall glass doors with timber posts, white curtains behind
   const glass = mat('#9aa3a6', { roughness: 0.15, metalness: 0.3 }), wood = mat('#6b4a30');
@@ -1050,7 +1102,7 @@ const LODGE = { cx: -8, cz: -14, W: 26, D: 8, H: 2.9 };
 // ── The residence (stone + plank roof, same style as the lodge) ──
 {
   const W = 14, D = 12, H = 3.4, g = new THREE.Group();
-  const walls = bx(W, H, D, texMat(STONE_TEX, W / 3, H / 3)); walls.position.y = H / 2; g.add(walls);
+  const walls = bx(W, H, D, stoneMat(W, H)); walls.position.y = H / 2; g.add(walls);
   const roof = hipRoof(W, D, 3, 1, texMat(PLANK_TEX, 1, 1, { side: THREE.DoubleSide })); roof.position.y = H; g.add(roof);
   const glass = mat('#9aa3a6', { roughness: 0.15, metalness: 0.3 });
   for (let x = -W / 2 + 2; x < W / 2 - 1; x += 3) [D / 2 + 0.04, -D / 2 - 0.04].forEach(z => { const w = bx(1.3, 1.5, 0.05, glass); w.position.set(x, 1.6, z); g.add(w); });
@@ -1181,6 +1233,38 @@ function hideUnderScans() {
   }
   SCENERY.forEach(({ o, x, z }) => { o.visible = !inside(x, z); });
   groundDirty = true; // grass mask
+}
+
+/* --- photographed props: ferns in the woods, boulders along the Rositsa, old stumps --- */
+{
+  const gl = new GLTFLoader();
+  const scatter = (n, test, seed) => { const out = []; let k = 0;
+    while (out.length < n && k < n * 60) { k++; const x = -110 + hash(k, seed) * 200, z = -70 + hash(seed, k) * 190; if (test(x, z)) out.push([x, z, hash(k * 3, seed), hash(seed, k * 7)]); } return out; };
+  const woods = (x, z) => !isLawn(x, z) && !isMeadow(x, z) && !isPaved(x, z) && distPoly(ROAD, x, z) > 4 && distPoly(RIVER, x, z) > 9 && distPoly(PATH, x, z) > 1.6 && Math.hypot(x - SLAB[0], z - SLAB[1]) > 12;
+  function instance(url, places, scaleFn, opts = {}) {
+    gl.load(ASSET + url, g => {
+      const parts = []; g.scene.updateMatrixWorld(true);
+      g.scene.traverse(o => { if (o.isMesh) parts.push(o); });
+      const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), sc = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+      parts.forEach((mesh, pi) => {
+        const mine = opts.split ? places.filter((_, i) => i % parts.length === pi) : places;
+        if (!mine.length) return;
+        if (opts.alpha) { mesh.material.alphaTest = 0.5; mesh.material.transparent = false; mesh.material.side = THREE.DoubleSide; }
+        const im = new THREE.InstancedMesh(mesh.geometry, mesh.material, mine.length);
+        mine.forEach(([x, z, r1, r2], i) => {
+          const s = scaleFn(r1); const local = opts.split ? new THREE.Matrix4() : mesh.matrixWorld;
+          m4.compose(p.set(x, heightAt(x, z) - (opts.sink || 0) * s, z), q.setFromAxisAngle(up, r2 * Math.PI * 2), sc.set(s, s, s)).multiply(local);
+          im.setMatrixAt(i, m4);
+        });
+        im.castShadow = !!opts.shadow; im.receiveShadow = true;
+        scene.add(im);
+      });
+    });
+  }
+  instance('models/fern_02/fern_02_1k.gltf', scatter(HQ ? 280 : 80, (x, z) => woods(x, z) && (isBeech(x, z) || distPoly(ROAD, x, z) < 22 || Math.hypot(x + 62, z - 92) < 26), 41), r => 1.6 + r * 1.2, { alpha: true, split: true });
+  instance('models/rock_07/rock_07_1k.gltf',
+    scatter(HQ ? 46 : 24, (x, z) => { const d = distPoly(RIVER, x, z); return d > 4.5 && d < 10 && x > -120 && x < 90; }, 77), r => 5 + r * 9, { shadow: true, sink: 0.04 });
+  instance('models/tree_stump_01/tree_stump_01_1k.gltf', scatter(HQ ? 24 : 10, (x, z) => woods(x, z) && isBeech(x, z), 93), r => 0.8 + r * 0.5, { shadow: true });
 }
 
 /* --- lawn & meadow grass: instanced blades with wind; flattened under floors, paths and drawings --- */
@@ -1605,7 +1689,11 @@ const TOD = {
   golden: { elev: 5,  az: -112, turb: 9,  ray: 2.8, fog: 0xd6b391, hemi: [0xffd2a0, 0x4a3a28, 0.3],  sun: [0xffa257, 2.6], glow: 1.6, flame: 1.6, exp: 0.95, bloom: [0.3, 0.85],  lights: 6 },
   night:  { elev: 38, az: 60,   turb: 2,  ray: 0.4, fog: 0x0b1324, hemi: [0x3a4a7a, 0x0a0c12, 0.32], sun: [0x9fb2ff, 0.35], glow: 3.2, flame: 3, exp: 1.0, bloom: [0.45, 0.72], lights: 30, night: true },
 };
-let bloomPass = null;
+let bloomPass = null, hdriEnv = null;
+new RGBELoader().load(ASSET + 'hdri/forest_slope_2k.hdr', tex => {   // photographed summer-forest light for daytime
+  hdriEnv = pmrem.fromEquirectangular(tex).texture; tex.dispose();
+  if (state.tod === 'day') scene.environment = hdriEnv;
+});
 function setTod(k) {
   state.tod = k; const t = TOD[k];
   const d = updateSky(t.night ? -12 : t.elev, t.az, t.turb, t.ray);
@@ -1613,6 +1701,7 @@ function setTod(k) {
   sky.visible = !t.night; stars.visible = !!t.night;
   scene.background = t.night ? new THREE.Color(t.fog) : null;
   if (t.night) scene.environment = null;
+  else if (k === 'day' && hdriEnv) scene.environment = hdriEnv;
   scene.fog.color.set(t.fog);
   hemi.color.set(t.hemi[0]); hemi.groundColor.set(t.hemi[1]); hemi.intensity = t.hemi[2] * (t.night ? 1 : 1);
   sun.color.set(t.sun[0]); sun.intensity = t.sun[1];
