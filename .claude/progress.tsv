@@ -18,3 +18,4 @@ date	type	metric	value	status
 2026-11-05	build	venue: 7 KIRI meshes -> ground-N.glb (180 MB -> 0.5 MB), walk in scan.html, scans placed in venue.html	walk + placement checks ok; on-device render unverified	done
 2026-11-06	build	venue: Poly Haven CC0 assets (HDRI, 5 PBR textures, fern/rock/stump models, 28 MB)	headless renders ok, no errors	done
 2026-11-06	fix	venue: scan memory budget (nearest scans only) + no retry loop on failed load	phone/laptop/failure tests ok	done
+2026-11-06	setup	added 6 game-dev skills (threejs x3, performance, camera, assets) to .claude/skills	reviewed, Apache-2.0 licence kept	done

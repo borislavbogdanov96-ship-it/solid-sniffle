@@ -18,6 +18,16 @@ Index of all active skills. Updated when new skills are built or existing ones c
 - **Reads Knowledge Center:** No
 - **Hands off to:** —
 
+### Game-dev skills (third-party, for venue.html / scan.html)
+From gamedev-skills/awesome-gamedev-agent-skills (Apache-2.0; source, licence and the
+three.js r186-vs-r160 note in `.claude/third-party/gamedev-skills/`).
+- **threejs-scene-setup** — scene, camera, renderer, render loop, resize, OrbitControls
+- **threejs-gltf-loading** — GLTFLoader, compressed meshes/textures, animation
+- **threejs-materials-lighting** — PBR materials, lights, shadows, environment maps
+- **performance-optimization** — frame budget, CPU/GPU triage, draw calls, memory
+- **camera-systems** — orbit / first-person cameras, smoothing, shake
+- **create-game-assets** — art direction and a consistent asset pipeline
+
 ---
 
 ## Plugin Skills
