@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+<title>Venue Scans — Bedouin Forest Residence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.7/build/gaussian-splats-3d.module.js"
+} }
+</script>
+<style>
+  :root { --primary: oklch(0.442 0.125 145); --surface: oklch(0.984 0.003 80 / 0.94); --border: oklch(0.885 0.008 80);
+    --text: oklch(0.255 0.010 80); --muted: oklch(0.520 0.010 80); --shadow: 0 10px 30px -12px rgb(30 25 15 / .35); }
+  @media (prefers-color-scheme: dark) { :root { --primary: oklch(0.720 0.130 145); --surface: oklch(0.215 0.004 80 / 0.94);
+    --border: oklch(0.330 0.004 80); --text: oklch(0.930 0.004 80); --muted: oklch(0.680 0.006 80); } }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #cfd8dc; color: var(--text); font: 14px/1.4 Inter, system-ui, sans-serif; }
+  #view { position: fixed; inset: 0; }
+  #view canvas { touch-action: none; }
+  .bar { position: fixed; z-index: 10; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; pointer-events: none; }
+  .bar > * { pointer-events: auto; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 6px 12px 6px 6px; }
+  .brand a { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: var(--text); text-decoration: none; background: rgb(0 0 0 / .06); }
+  .brand b { font-family: 'Cormorant Garamond', serif; font-size: 19px; display: block; line-height: 1.05; }
+  .brand span { font-size: 11px; color: var(--muted); }
+  .seg { display: flex; padding: 3px; gap: 2px; overflow-x: auto; max-width: 100%; }
+  .seg button { border: 0; background: transparent; padding: 7px 11px; border-radius: 10px; font: 600 12.5px Inter, sans-serif; color: var(--muted); min-height: 36px; white-space: nowrap; cursor: pointer; }
+  .seg button.on { background: var(--primary); color: #fff; }
+  #help { position: fixed; z-index: 10; left: 10px; bottom: 10px; padding: 8px 12px; font-size: 11.5px; color: var(--muted); max-width: 340px; }
+  #help b { color: var(--text); }
+  #status { position: fixed; z-index: 10; left: 50%; top: 50%; transform: translate(-50%, -50%); padding: 12px 16px; font-weight: 600; display: none; }
+  #status.show { display: block; }
+  #joy { position: fixed; z-index: 10; left: 22px; bottom: 26px; width: 120px; height: 120px; border-radius: 50%; display: none;
+    background: rgb(255 255 255 / .22); border: 2px solid rgb(255 255 255 / .55); touch-action: none; backdrop-filter: blur(6px); }
+  #joy .knob { position: absolute; left: 50%; top: 50%; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: rgb(255 255 255 / .85); }
+  body.walk.touch #joy { display: block; }
+  @media (max-width: 760px) { .brand span, #help { display: none; } .seg button { padding: 6px 8px; font-size: 11.5px; } }
+</style>
+</head>
+<body>
+<div id="view"></div>
+<header class="bar">
+  <div class="card brand">
+    <a href="venue.html" aria-label="Back to the venue map" title="Back to the venue map">
+      <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <div><b>Venue scans</b><span>Real 3D captures from your videos</span></div>
+  </div>
+  <div class="card seg" id="scanSeg"></div>
+  <div class="card seg" id="viewSeg">
+    <button data-v="eye" class="on">Walk</button>
+    <button data-v="over">Overview</button>
+  </div>
+</header>
+<div id="status" class="card"></div>
+<div id="joy"><div class="knob"></div></div>
+<div id="help" class="card"></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import * as GS from '@mkkellogg/gaussian-splats-3d';
+
+// Scans exported from KIRI Engine (3DGS), pruned and compressed to .ksplat, plus a simplified
+// ground mesh per scan (from KIRI's "3DGS to Mesh") used only for walking — never drawn.
+// Scan units are the capture's own; +y points DOWN. KIRI centres a scan on the phone's path,
+// ~0.7 units above the ground in most scans, which suggests ~2 m per unit (phone at chest height).
+// c = [x, z] centre, e = rough radius (units).
+const SCANS = [
+  { id: 1, name: 'Scan 1', c: [-0.68, -0.37], e: 8.4 },
+  { id: 2, name: 'Scan 2', c: [0.09, 0.15],   e: 6.1 },
+  { id: 3, name: 'Scan 3', c: [0.48, 1.46],   e: 12.4 },
+  { id: 4, name: 'Scan 4', c: [-0.73, -1.26], e: 7.5 },
+  { id: 5, name: 'Scan 5', c: [2.19, -2.86],  e: 15.3 },
+  { id: 6, name: 'Scan 6', c: [9.85, 8.99],   e: 13.6 },
+  { id: 7, name: 'Scan 7', c: [1.48, -0.54],  e: 7.5 },
+];
+const M_PER_UNIT = 2.0, EYE = 1.6 / M_PER_UNIT, UP = new THREE.Vector3(0, -1, 0);
+const params = new URLSearchParams(location.search);
+let current = SCANS.find(s => String(s.id) === params.get('s')) || SCANS[3];
+let viewer = null, loading = false, mode = 'eye', ground = null;
+const walk = { pos: new THREE.Vector3(), yaw: 0, pitch: 0, keys: {}, joy: { x: 0, y: 0 }, anim: null };
+const status = document.getElementById('status');
+const seg = document.getElementById('scanSeg');
+seg.innerHTML = SCANS.map(s => `<button data-id="${s.id}">${s.name}</button>`).join('');
+seg.querySelectorAll('button').forEach(b => b.onclick = () => open(SCANS.find(s => s.id === +b.dataset.id)));
+document.querySelectorAll('#viewSeg button').forEach(b => b.onclick = () => setView(b.dataset.v));
+
+/* ground mesh: last hit straight down = the ground under canopies and benches */
+const ray = new THREE.Raycaster();
+function groundY(x, z) {
+  if (!ground) return 0;
+  ray.set(new THREE.Vector3(x, -200, z), new THREE.Vector3(0, 1, 0)); ray.far = 400;
+  const hits = ray.intersectObject(ground, true);
+  return hits.length ? hits[hits.length - 1].point.y : null;
+}
+function loadGround(s) {
+  return new GLTFLoader().loadAsync(`venue-scans/ground-${s.id}.glb`).then(g => {
+    const root = new THREE.Group(); root.add(g.scene); root.rotation.x = Math.PI; // mesh is y-up; scan is y-down
+    root.traverse(o => { if (o.isMesh) o.material.side = THREE.DoubleSide; });
+    root.updateMatrixWorld(true); return root;
+  }).catch(() => null);
+}
+
+function dir() { // looking direction in scan space (y-down)
+  const f = new THREE.Vector3(Math.sin(walk.yaw), 0, Math.cos(walk.yaw));
+  return f.multiplyScalar(Math.cos(walk.pitch)).addScaledVector(UP, Math.sin(walk.pitch));
+}
+function placeWalker(x, z) {
+  const g = groundY(x, z); if (g === null) return false;
+  walk.pos.set(x, g - EYE, z); return true;
+}
+function setView(v) {
+  mode = v;
+  document.querySelectorAll('#viewSeg button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.getElementById('help').innerHTML = v === 'eye'
+    ? '<b>Drag</b> to look around · <b>WASD / arrows</b> or the joystick to walk · <b>tap the ground</b> to step there'
+    : '<b>Drag</b> to orbit · <b>right-drag / two fingers</b> to move · <b>scroll / pinch</b> to zoom';
+  document.body.classList.toggle('walk', v === 'eye');
+  if (!viewer) return;
+  const [x, z] = current.c, e = current.e;
+  if (v === 'eye') {
+    if (!placeWalker(x, z)) walk.pos.set(x, -EYE, z);
+    walk.yaw = 0; walk.pitch = 0;
+    viewer.controls.enableZoom = viewer.controls.enablePan = viewer.controls.enableRotate = false;
+  } else {
+    const g = groundY(x, z) ?? 0;
+    viewer.controls.enableZoom = viewer.controls.enablePan = viewer.controls.enableRotate = true;
+    viewer.camera.position.set(x, g - e * 0.6, z + e * 1.1);
+    viewer.controls.target.set(x, g - 0.5, z);
+    viewer.controls.update();
+  }
+}
+async function open(s) {
+  if (loading) return;
+  loading = true; current = s;
+  history.replaceState(null, '', '?s=' + s.id);
+  seg.querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.id === s.id));
+  if (viewer) { try { await viewer.dispose(); } catch {} viewer = null; document.getElementById('view').innerHTML = ''; }
+  status.textContent = 'Loading ' + s.name + '…'; status.classList.add('show');
+  ground = await loadGround(s);
+  const [x, z] = s.c, g = groundY(x, z) ?? 0;
+  viewer = new GS.Viewer({
+    rootElement: document.getElementById('view'),
+    cameraUp: [0, -1, 0],
+    initialCameraPosition: [x, g - EYE, z],
+    initialCameraLookAt: [x, g - EYE, z + 1],
+    sharedMemoryForWorkers: false,   // GitHub Pages is not cross-origin isolated
+    sphericalHarmonicsDegree: 0,
+    antialiased: true,
+    dynamicScene: false,
+    logLevel: GS.LogLevel.None,
+  });
+  window.__viewer = viewer;
+  try {
+    await viewer.addSplatScene(`venue-scans/scan-${s.id}.ksplat`, { showLoadingUI: true, progressiveLoad: false, splatAlphaRemovalThreshold: 8 });
+    viewer.start();
+    status.classList.remove('show');
+    setView(mode);
+    bindPointer();
+  } catch (err) {
+    status.textContent = 'Could not load this scan: ' + (err && err.message || err);
+  }
+  loading = false;
+}
+
+/* pointer: drag to look, tap the ground to step there (walk mode only) */
+function bindPointer() {
+  const el = viewer.renderer.domElement; let down = null;
+  el.addEventListener('pointerdown', e => { if (mode !== 'eye') return; down = { x: e.clientX, y: e.clientY, lx: e.clientX, ly: e.clientY, t: performance.now() }; el.setPointerCapture(e.pointerId); });
+  el.addEventListener('pointermove', e => {
+    if (!down || mode !== 'eye') return;
+    walk.yaw += (e.clientX - down.lx) * 0.004; walk.pitch = Math.max(-1.2, Math.min(1.2, walk.pitch + (e.clientY - down.ly) * 0.004));
+    down.lx = e.clientX; down.ly = e.clientY; walk.anim = null;
+  });
+  el.addEventListener('pointerup', e => {
+    if (!down || mode !== 'eye') return;
+    const tap = Math.hypot(e.clientX - down.x, e.clientY - down.y) < 7 && performance.now() - down.t < 450; down = null;
+    if (!tap || !ground) return;
+    const r = el.getBoundingClientRect();
+    ray.setFromCamera(new THREE.Vector2((e.clientX - r.left) / r.width * 2 - 1, -(e.clientY - r.top) / r.height * 2 + 1), viewer.camera); ray.far = current.e * 3;
+    const hit = ray.intersectObject(ground, true)[0]; if (!hit) return;
+    const g = groundY(hit.point.x, hit.point.z); if (g === null) return;
+    walk.anim = { from: walk.pos.clone(), to: new THREE.Vector3(hit.point.x, g - EYE, hit.point.z), t0: performance.now(), dur: 700 };
+  });
+}
+
+addEventListener('keydown', e => { walk.keys[e.code] = true; });
+addEventListener('keyup', e => { walk.keys[e.code] = false; });
+{
+  const joy = document.getElementById('joy'), knob = joy.querySelector('.knob'); let id = null;
+  const move = e => { const r = joy.getBoundingClientRect(); let x = (e.clientX - r.left - r.width / 2) / (r.width / 2), y = (e.clientY - r.top - r.height / 2) / (r.height / 2);
+    const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; } walk.joy = { x, y }; knob.style.transform = `translate(${x * 35}px, ${y * 35}px)`; };
+  joy.addEventListener('pointerdown', e => { id = e.pointerId; joy.setPointerCapture(id); move(e); });
+  joy.addEventListener('pointermove', e => { if (e.pointerId === id) move(e); });
+  const end = () => { id = null; walk.joy = { x: 0, y: 0 }; knob.style.transform = ''; };
+  joy.addEventListener('pointerup', end); joy.addEventListener('pointercancel', end);
+}
+if (matchMedia('(pointer: coarse)').matches) document.body.classList.add('touch');
+
+let last = performance.now();
+(function loop(now) {
+  const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (viewer && viewer.camera && mode === 'eye') {
+    const k = walk.keys;
+    const f = (k.KeyW || k.ArrowUp ? 1 : 0) - (k.KeyS || k.ArrowDown ? 1 : 0) - walk.joy.y;
+    const r = (k.KeyD || k.ArrowRight ? 1 : 0) - (k.KeyA || k.ArrowLeft ? 1 : 0) + walk.joy.x;
+    if (walk.anim) {
+      const t = Math.min(1, (now - walk.anim.t0) / walk.anim.dur), e = 1 - Math.pow(1 - t, 3);
+      walk.pos.lerpVectors(walk.anim.from, walk.anim.to, e); if (t >= 1) walk.anim = null;
+    } else if (f || r) {
+      const sp = (k.ShiftLeft || k.ShiftRight ? 3.5 : 1.4) / M_PER_UNIT * dt; // ~1.4 m/s walking
+      const fw = new THREE.Vector3(Math.sin(walk.yaw), 0, Math.cos(walk.yaw)), rt = new THREE.Vector3().crossVectors(fw, UP);
+      const nx = walk.pos.x + (fw.x * f + rt.x * r) * sp, nz = walk.pos.z + (fw.z * f + rt.z * r) * sp;
+      const g = groundY(nx, nz);
+      if (g !== null) walk.pos.set(nx, g - EYE, nz);   // no ground here (edge of the scan): stay put
+    }
+    viewer.camera.position.copy(walk.pos);
+    viewer.controls.target.copy(walk.pos).addScaledVector(dir(), 0.5);
+  }
+  requestAnimationFrame(loop);
+})(last);
+
+setView('eye');
+open(current);
+</script>
+</body>
+</html>

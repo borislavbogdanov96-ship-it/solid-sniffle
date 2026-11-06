@@ -1,0 +1,20 @@
+date	type	metric	value	status
+# Append-only. One row per session/milestone. Tab-separated. Never rewrite existing rows.
+# type:   the kind of work — analysis | spec | design | build | review | decision | launch
+# metric: what is being measured/tracked for this row (free text, e.g. "AC drafted", "users in segment")
+# value:  the figure or short result (e.g. "12", "v2 shipped", "n/a")
+# status: open | in-progress | done | blocked
+# Example:
+# 2026-06-16	build	prototypes shipped	3	done
+2026-09-03	build	acceptance checks passing	17/17	done
+2026-09-03	decision	stack adapted to single-file vanilla + RTDB	logged	done
+2026-09-03	build	scenario checks passing	17/17	done
+2026-09-03	build	acceptance + regression after scenarios	32/32	done
+2026-11-05	build	venue 3D planner (venue.html) smoke test in headless Chromium	bird/walk/night/tour/draw ok	done
+2026-11-05	build	venue: draft programme + photo detail	12 moments; walk views ok	done
+2026-11-05	build	venue hi-fi rendering merged (PR #5)	6 views rendered, no errors	done
+2026-11-05	build	invite + RSVP e2e checks passing	36/36	done
+2026-11-05	build	venue real scans: 7 KIRI 3DGS -> ksplat, scan.html viewer	1.3 GB -> 116 MB	done
+2026-11-05	build	venue: 7 KIRI meshes -> ground-N.glb (180 MB -> 0.5 MB), walk in scan.html, scans placed in venue.html	walk + placement checks ok; on-device render unverified	done
+2026-11-06	build	venue: Poly Haven CC0 assets (HDRI, 5 PBR textures, fern/rock/stump models, 28 MB)	headless renders ok, no errors	done
+2026-11-06	fix	venue: scan memory budget (nearest scans only) + no retry loop on failed load	phone/laptop/failure tests ok	done
